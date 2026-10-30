@@ -4,11 +4,11 @@
 ![](https://jamescherti.com/misc/made-for-gnu-emacs.svg)
 
 - Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
-- License: GPL-3.0-or-later
+- License: GPL 3.0 or later
 
-**terminal-colors.el** applies unified terminal color schemes across Emacs terminal emulators, including `vterm`, `eat`, and `term` (`ansi-term`).
+The **[terminal-colors.el](https://github.com/jamescherti/terminal-colors.el)** package applies unified terminal color schemes across Emacs terminal emulators, including `vterm`, `eat`, and `term` (`ansi-term`).
 
-By default, Emacs terminal emulators inherit their ANSI colors and background from the active Emacs theme, which can result in low contrast or unreadable text in terminal applications. **terminal-colors.el** decouples terminal colors from the global Emacs theme, applying dedicated 16-color palettes and buffer-local foreground and background colors modeled after standalone terminal emulators.
+By default, Emacs terminal emulators inherit their ANSI colors and background from the active Emacs theme, which can result in low contrast or unreadable text in terminal applications. The **terminal-colors** package decouples terminal colors from the global Emacs theme, applying dedicated palettes and buffer-local foreground and background colors modeled after standalone terminal emulators.
 
 ## Features
 
@@ -33,11 +33,20 @@ Step 2: Add the following code to the Emacs init file:
              :type git
              :host github
              :repo "jamescherti/terminal-colors.el")
+  :custom
+  (terminal-colors-default-theme "gnome-terminal-tango-dark")
   :config
-  (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
-  (terminal-colors-vterm-mode 1)
-  (terminal-colors-eat-mode 1)
-  (terminal-colors-term-mode 1))
+  (with-eval-after-load 'vterm
+    (require 'terminal-colors-vterm)
+    (terminal-colors-vterm-mode 1))
+
+  (with-eval-after-load 'eat
+    (require 'terminal-colors-eat)
+    (terminal-colors-eat-mode 1))
+
+  (with-eval-after-load 'term
+    (require 'terminal-colors-term)
+    (terminal-colors-term-mode 1)))
 ```
 
 ### Alternative installation: use-package and :vc (Built-in feature in Emacs version >= 30)
@@ -48,11 +57,20 @@ To install *terminal-colors* with `use-package` and `:vc` (Emacs >= 30):
 (use-package terminal-colors
   :vc (:url "https://github.com/jamescherti/terminal-colors.el"
        :rev :newest)
+  :custom
+  (terminal-colors-default-theme "gnome-terminal-tango-dark")
   :config
-  (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
-  (terminal-colors-vterm-mode 1)
-  (terminal-colors-eat-mode 1)
-  (terminal-colors-term-mode 1))
+  (with-eval-after-load 'vterm
+    (require 'terminal-colors-vterm)
+    (terminal-colors-vterm-mode 1))
+
+  (with-eval-after-load 'eat
+    (require 'terminal-colors-eat)
+    (terminal-colors-eat-mode 1))
+
+  (with-eval-after-load 'term
+    (require 'terminal-colors-term)
+    (terminal-colors-term-mode 1)))
 ```
 
 ### Alternative installation: Doom Emacs
@@ -71,9 +89,18 @@ To install *terminal-colors* on Doom Emacs:
 ```elisp
 (after! terminal-colors
   (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
-  (terminal-colors-vterm-mode 1)
-  (terminal-colors-eat-mode 1)
-  (terminal-colors-term-mode 1))
+
+  (with-eval-after-load 'vterm
+    (require 'terminal-colors-vterm)
+    (terminal-colors-vterm-mode 1))
+
+  (with-eval-after-load 'eat
+    (require 'terminal-colors-eat)
+    (terminal-colors-eat-mode 1))
+
+  (with-eval-after-load 'term
+    (require 'terminal-colors-term)
+    (terminal-colors-term-mode 1)))
 ```
 
 3. Run the `doom sync` command:
@@ -101,7 +128,7 @@ Enable the global minor mode corresponding to each terminal emulator you use:
 (terminal-colors-term-mode 1)
 ```
 
-### Selecting a Theme
+### Changing the terminal color scheme
 
 Set `terminal-colors-default-theme` to choose the default palette loaded on initialization:
 
