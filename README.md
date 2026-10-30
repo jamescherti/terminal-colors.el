@@ -1,5 +1,5 @@
-# terminal-colors.el
-![Build Status](https://github.com/jamescherti/terminal-colors.el/actions/workflows/melpazoid.yml/badge.svg)
+# terminal-colors.el - Apply color schemes to your Emacs terminal: vterm, eat, term, and ansi-color
+![Build Status](https://github.com/jamescherti/terminal-colors.el/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/github/license/jamescherti/terminal-colors.el)
 ![](https://jamescherti.com/misc/made-for-gnu-emacs.svg)
 
@@ -9,6 +9,9 @@
 The **[terminal-colors](https://github.com/jamescherti/terminal-colors.el)** package applies terminal themes (color schemes) to Emacs terminal emulators, including `vterm`, `eat`, and `term` (`ansi-term`).
 
 By default, Emacs terminal emulators inherit their ANSI colors and background from the active Emacs theme, which can result in low contrast or unreadable text in terminal applications. The **terminal-colors** package decouples terminal colors from the global Emacs theme, applying dedicated palettes and buffer-local foreground and background colors modeled after standalone terminal emulators.
+
+![](https://www.jamescherti.com/misc/screenshot-minimal-emacs-2.png)
+*(The terminal-colors theme shown in the screenshot above is 'gnome-terminal-tango-dark'.)*
 
 **Note: If this project helps your workflow, please consider supporting the project by ⭐ starring it on GitHub and sharing it on your website, blog, Mastodon, Reddit, X, LinkedIn, or other social media platforms so other Emacs users can discover its benefits.**
 

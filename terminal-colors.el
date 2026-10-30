@@ -928,71 +928,6 @@ DEFAULT-FG-BG is the name of an item in
                         :foreground terminal-colors--color-bright-white
                         :background terminal-colors--color-bright-white))
 
-    ;; ansi-color
-    ;; (set-face-attribute 'ansi-color-black nil
-    ;;                     :foreground terminal-colors--color-black
-    ;;                     :background terminal-colors--color-black)
-    ;;
-    ;; (set-face-attribute 'ansi-color-red nil
-    ;;                     :foreground terminal-colors--color-red
-    ;;                     :background terminal-colors--color-red)
-    ;;
-    ;; (set-face-attribute 'ansi-color-green nil
-    ;;                     :foreground terminal-colors--color-green
-    ;;                     :background terminal-colors--color-green)
-    ;;
-    ;; (set-face-attribute 'ansi-color-yellow nil
-    ;;                     :foreground terminal-colors--color-yellow
-    ;;                     :background terminal-colors--color-yellow)
-    ;;
-    ;; (set-face-attribute 'ansi-color-blue nil
-    ;;                     :foreground terminal-colors--color-blue
-    ;;                     :background terminal-colors--color-blue)
-    ;;
-    ;; (set-face-attribute 'ansi-color-magenta nil
-    ;;                     :foreground terminal-colors--color-magenta
-    ;;                     :background terminal-colors--color-magenta)
-    ;;
-    ;; (set-face-attribute 'ansi-color-cyan nil
-    ;;                     :foreground terminal-colors--color-cyan
-    ;;                     :background terminal-colors--color-cyan)
-    ;;
-    ;; (set-face-attribute 'ansi-color-white nil
-    ;;                     :foreground terminal-colors--color-white
-    ;;                     :background terminal-colors--color-white)
-    ;;
-    ;; (set-face-attribute 'ansi-color-bright-black nil
-    ;;                     :foreground terminal-colors--color-bright-black
-    ;;                     :background terminal-colors--color-bright-black)
-    ;;
-    ;; (set-face-attribute 'ansi-color-bright-red nil
-    ;;                     :foreground terminal-colors--color-bright-red
-    ;;                     :background terminal-colors--color-bright-red)
-    ;;
-    ;; (set-face-attribute 'ansi-color-bright-green nil
-    ;;                     :foreground terminal-colors--color-bright-green
-    ;;                     :background terminal-colors--color-bright-green)
-    ;;
-    ;; (set-face-attribute 'ansi-color-bright-yellow nil
-    ;;                     :foreground terminal-colors--color-bright-yellow
-    ;;                     :background terminal-colors--color-bright-yellow)
-    ;;
-    ;; (set-face-attribute 'ansi-color-bright-blue nil
-    ;;                     :foreground terminal-colors--color-bright-blue
-    ;;                     :background terminal-colors--color-bright-blue)
-    ;;
-    ;; (set-face-attribute 'ansi-color-bright-magenta nil
-    ;;                     :foreground terminal-colors--color-bright-magenta
-    ;;                     :background terminal-colors--color-bright-magenta)
-    ;;
-    ;; (set-face-attribute 'ansi-color-bright-cyan nil
-    ;;                     :foreground terminal-colors--color-bright-cyan
-    ;;                     :background terminal-colors--color-bright-cyan)
-    ;;
-    ;; (set-face-attribute 'ansi-color-bright-white nil
-    ;;                     :foreground terminal-colors--color-bright-white
-    ;;                     :background terminal-colors--color-bright-white)
-
     (dolist (buf (buffer-list))
       (with-current-buffer buf
         (terminal-colors-term--set-foreground-background))))
@@ -1116,12 +1051,7 @@ ARGS are additional property keywords like :foreground or :inverse-video."
   (let ((is-foreground (member :foreground args))
         (is-inverse (member :inverse-video args)))
     (cond
-     ;; Why handle background for Index -1 or 0?
-     ;; 1. We only override when `terminal-colors-vterm-mode' is active.
-     ;; 2. We step aside if `is-inverse' is true to maintain legible highlights.
-     ;; 3. Index -1 represents the default background face.
-     ;; 4. Index 0 prevents applications from drawing hardcoded black blocks
-     ;;    over the intended theme background.
+     ;; 1. Intercept default/black background when `terminal-colors-vterm-mode' is active.
      ((and (bound-and-true-p terminal-colors-vterm-mode)
            (not is-foreground)
            (not is-inverse)
@@ -1129,12 +1059,7 @@ ARGS are additional property keywords like :foreground or :inverse-video."
            (bound-and-true-p terminal-colors--background))
       terminal-colors--background)
 
-     ;; Why handle foreground for Index -1?
-     ;; 1. We only override when `terminal-colors-vterm-mode' is active.
-     ;; 2. We step aside if `is-inverse' is true, or if `:underline' is
-     ;;    present and `vterm-color-underline' defines an explicit foreground.
-     ;; 3. Index -1 represents the default foreground text color. We intercept
-     ;;    this to apply the theme's specific foreground color.
+     ;; 2. Intercept default foreground text color when `terminal-colors-vterm-mode' is active.
      ((and (bound-and-true-p terminal-colors-vterm-mode)
            is-foreground
            (not is-inverse)
@@ -1147,52 +1072,9 @@ ARGS are additional property keywords like :foreground or :inverse-video."
            (bound-and-true-p terminal-colors--foreground))
       terminal-colors--foreground)
 
-     ;; Why do we have this default fallback?
-     ;; This passes the request back to the original `vterm--get-color' function
-     ;; when our mode is disabled, when inverse video is requested, or for
-     ;; standard ANSI colors (indices 1-15).
+     ;; 3. Default to original behavior for everything else.
      (t
       (apply orig-fun index args)))))
-
-;; (defun terminal-colors-vterm--get-color-override (orig-fun index &rest args)
-;;    "Override `vterm--get-color' to use `terminal-colors' variables.
-;;
-;; ORIG-FUN is the original color function being advised.
-;; INDEX is the terminal color index (e.g., -1 for default, 0 for black).
-;; ARGS are additional property keywords like :foreground or :inverse-video."
-;;    (let ((is-foreground (member :foreground args))
-;;          (is-inverse (member :inverse-video args)))
-;;      (cond
-;;       ((and terminal-colors-vterm-mode
-;;             (not is-foreground)
-;;             (not is-inverse)
-;;             (or (= index -1) (= index 0))
-;;             (bound-and-true-p terminal-colors--background))
-;;        terminal-colors--background)
-;;
-;;       ((and terminal-colors-vterm-mode
-;;             is-foreground
-;;             (not is-inverse)
-;;             (= index -1)
-;;             (bound-and-true-p terminal-colors--foreground))
-;;        terminal-colors--foreground)
-;;
-;;       ;; Default to original behavior for everything else
-;;       (t
-;;        (apply orig-fun index args)))))
-
-;; (defun terminal-colors-vterm--get-color-override (orig-fun index &rest args)
-;;    "Override `vterm--get-color' to use `terminal-colors--background'."
-;;    (let ((is-foreground (member :foreground args))
-;;          (is-inverse (member :inverse-video args)))
-;;      ;; Intercept requests for the default (-1) or black (0) background
-;;      (if (and terminal-colors-vterm-mode
-;;               (not is-foreground)
-;;               (not is-inverse)
-;;               (or (= index -1) (= index 0))
-;;               (bound-and-true-p terminal-colors--background))
-;;          terminal-colors--background
-;;        (apply orig-fun index args))))
 
 (defun terminal-colors-vterm--reset ()
   "Reset the Terminal Theme."
