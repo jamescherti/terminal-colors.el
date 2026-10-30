@@ -45,6 +45,7 @@
 ;;; Require
 
 (require 'ansi-color)
+(require 'cl-lib)
 (require 'face-remap)
 
 (defvar ansi-term-color-vector)
@@ -663,6 +664,25 @@ DEFAULT-FG-BG is the name of an item in
 (defvar terminal-colors-eat--saved-faces nil
   "Face state saved before applying terminal colors.")
 
+(defun terminal-colors-eat--process-output (orig-fun &rest args)
+  "Call ORIG-FUN with ARGS using terminal defaults in Eat buffers.
+Scope default face lookups to output processing without changing faces."
+  (let ((original-face-attribute (symbol-function 'face-attribute)))
+    (cl-letf (((symbol-function 'face-attribute)
+               (lambda (face attribute &optional frame inherit)
+                 (let ((color
+                        (and (eq face 'default)
+                             (null frame)
+                             terminal-colors-eat--saved-faces
+                             (derived-mode-p 'eat-mode)
+                             (pcase attribute
+                               (:foreground terminal-colors--foreground)
+                               (:background terminal-colors--background)))))
+                   (or color
+                       (funcall original-face-attribute
+                                face attribute frame inherit))))))
+      (apply orig-fun args))))
+
 (defun terminal-colors-eat--set-foreground-background ()
   "Set the terminal theme foreground and background color."
   (when (derived-mode-p 'eat-mode)
@@ -769,6 +789,8 @@ DEFAULT-FG-BG is the name of an item in
       (condition-case err
           (progn
             (require 'eat)
+            (advice-add 'eat-term-process-output :around
+                        #'terminal-colors-eat--process-output)
             (add-hook 'terminal-colors--after-load-hook
                       #'terminal-colors-eat--apply)
             (add-hook 'terminal-colors--reset-hook #'terminal-colors-eat--reset)
@@ -778,6 +800,8 @@ DEFAULT-FG-BG is the name of an item in
         (error
          (terminal-colors-eat-mode -1)
          (signal (car err) (cdr err))))
+    (advice-remove 'eat-term-process-output
+                   #'terminal-colors-eat--process-output)
     (remove-hook 'terminal-colors--after-load-hook
                  #'terminal-colors-eat--apply)
     (remove-hook 'terminal-colors--reset-hook
