@@ -1068,7 +1068,7 @@ ARGS are the arguments passed to ORIG-FUN."
 
 (defun terminal-colors-vterm--get-color-override (orig-fun index &rest args)
   "Return the terminal default color or call ORIG-FUN with INDEX and ARGS.
-Preserve indexed colors and explicit underline and inverse-video colors."
+Preserve indexed colors and explicit underline and `inverse-video' colors."
   (if (and (bound-and-true-p terminal-colors-vterm-mode)
            (not (eq terminal-colors-vterm--backup-color-palette 'unset))
            (derived-mode-p 'vterm-mode)
@@ -1158,7 +1158,9 @@ Preserve indexed colors and explicit underline and inverse-video colors."
       (condition-case err
           (progn
             (require 'vterm)
-            (advice-add 'vterm--get-color :around #'terminal-colors-vterm--get-color-override)
+            (if (fboundp 'terminal-colors-eat--process-output)
+                (advice-add 'vterm--get-color :around #'terminal-colors-vterm--get-color-override)
+              (message "[terminal-colors] Warning: terminal-colors-vterm--get-color-override"))
             (add-hook 'terminal-colors--after-load-hook
                       #'terminal-colors-vterm--apply)
             (add-hook 'terminal-colors--reset-hook
