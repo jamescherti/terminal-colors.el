@@ -793,9 +793,8 @@ DEFAULT-FG-BG is the name of an item in
                   #'terminal-colors-eat--set-foreground-background)
         ;; (add-hook 'window-configuration-change-hook
         ;;           #'terminal-colors-eat--set-foreground-background)
-        (with-eval-after-load 'eat
-          (when terminal-colors-eat-mode
-            (terminal-colors-eat--apply)))
+        (when (bound-and-true-p terminal-colors-eat-mode)
+          (terminal-colors-eat--apply))
         (terminal-colors--init))
     (remove-hook 'terminal-colors--after-load-hook
                  #'terminal-colors-eat--apply)
