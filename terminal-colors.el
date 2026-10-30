@@ -665,8 +665,22 @@ DEFAULT-FG-BG is the name of an item in
   "Face state saved before applying terminal colors.")
 
 (defun terminal-colors-eat--process-output (orig-fun &rest args)
-  "Call ORIG-FUN with ARGS using terminal defaults in Eat buffers.
-Scope default face lookups to output processing without changing faces."
+  "Intercept `face-attribute' lookups during Eat output processing.
+
+Buffer-local face remappings (which this package uses to apply the terminal
+theme) only affect the Emacs display engine. Standard Lisp queries like
+`face-attribute' ignore these remappings and will return the global Emacs theme
+colors.
+
+When `eat' processes terminal output (ORIG-FUN), it frequently queries the
+`default' face to handle features like SGR inverse video or OSC color reporting.
+
+This advice dynamically overrides `face-attribute' during execution to ensure
+that `eat' receives the isolated, buffer-local terminal
+colors (`terminal-colors--foreground' and `terminal-colors--background') rather
+than the global Emacs theme colors.
+
+ARGS are the arguments passed to ORIG-FUN."
   (let ((original-face-attribute (symbol-function 'face-attribute)))
     (cl-letf (((symbol-function 'face-attribute)
                (lambda (face attribute &optional frame inherit)
@@ -789,8 +803,10 @@ Scope default face lookups to output processing without changing faces."
       (condition-case err
           (progn
             (require 'eat)
-            (advice-add 'eat-term-process-output :around
-                        #'terminal-colors-eat--process-output)
+            (if (fboundp 'terminal-colors-eat--process-output)
+                (advice-add 'eat-term-process-output :around
+                            #'terminal-colors-eat--process-output)
+              (message "[terminal-colors] Warning: terminal-colors-eat--process-output"))
             (add-hook 'terminal-colors--after-load-hook
                       #'terminal-colors-eat--apply)
             (add-hook 'terminal-colors--reset-hook #'terminal-colors-eat--reset)
