@@ -1,9 +1,9 @@
-;;; terminal-colors-frame-color.el --- Frame color -*- lexical-binding: t -*-
+;;; terminal-colors-frame-color.el --- Synchronize frame colors with terminal buffers -*- lexical-binding: t -*-
 
 ;; Author: James Cherti
 ;; URL: https://github.com/jamescherti/terminal-colors.el
 ;; Package-Requires: ((emacs "29.1"))
-;; Keywords: maint
+;; Keywords: faces terminals
 ;; Version: 0.0.9
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -21,8 +21,10 @@
 ;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; Frame color
-
+;; This library provides helper functions to synchronize the Emacs frame
+;; foreground and background parameters with the active buffer when switching
+;; between terminal buffers (`vterm-mode', `term-mode', `eat-mode') and
+;; standard Emacs buffers.
 
 ;;; Code:
 
@@ -53,11 +55,11 @@
                        (derived-mode-p 'term-mode)
                        (derived-mode-p 'eat-mode)))
            (fg-color (if (and term-p
-                              (boundp 'terminal-colors--foreground))
+                              (bound-and-true-p terminal-colors--foreground))
                          terminal-colors--foreground
                        terminal-colors-frame-color--theme-foreground))
            (bg-color (if (and term-p
-                              (boundp 'terminal-colors--background))
+                              (bound-and-true-p terminal-colors--background))
                          terminal-colors--background
                        terminal-colors-frame-color--theme-background)))
       (when (and fg-color (not (member fg-color
