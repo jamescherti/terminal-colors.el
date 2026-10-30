@@ -47,6 +47,12 @@
 (require 'ansi-color)
 (require 'face-remap)
 
+(defvar ansi-term-color-vector)
+(defvar vterm-color-palette)
+(defvar vterm--term)
+(declare-function vterm--redraw "vterm" (term))
+(declare-function vterm--get-color "vterm" (index &rest args))
+
 ;;; Variables
 
 (defgroup terminal-colors nil
@@ -714,7 +720,7 @@ ARGS are additional property keywords like :foreground or :inverse-video."
      ;; 3. Index -1 represents the default background face.
      ;; 4. Index 0 prevents applications from drawing hardcoded black blocks
      ;;    over the intended theme background.
-     ((and terminal-colors-vterm-mode
+     ((and (bound-and-true-p terminal-colors-vterm-mode)
            (not is-foreground)
            (not is-inverse)
            (or (= index -1) (= index 0))
@@ -726,7 +732,7 @@ ARGS are additional property keywords like :foreground or :inverse-video."
      ;; 2. We step aside if `is-inverse' is true.
      ;; 3. Index -1 represents the default foreground text color. We intercept
      ;;    this to apply the theme's specific foreground color.
-     ((and terminal-colors-vterm-mode
+     ((and (bound-and-true-p terminal-colors-vterm-mode)
            is-foreground
            (not is-inverse)
            (= index -1)
@@ -1139,9 +1145,5 @@ DEFAULT-FG-BG is the name of an item in
     (run-hooks 'terminal-colors--after-load-hook)))
 
 (provide 'terminal-colors)
-
-;; Local variables:
-;; byte-compile-warnings: (not free-vars)
-;; End:
 
 ;;; terminal-colors.el ends here
