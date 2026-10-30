@@ -43,7 +43,7 @@ To install *terminal-colors* with `use-package` and `:vc` (Emacs >= 30):
 (use-package terminal-colors
   :vc (:url "https://github.com/jamescherti/terminal-colors.el"
        :rev :newest)
-  :custom
+  :config
   ;; Builtin themes:
   ;;   gnome-terminal-tango-dark (default)
   ;;   gnome-terminal-tango-light
@@ -55,7 +55,7 @@ To install *terminal-colors* with `use-package` and `:vc` (Emacs >= 30):
   ;;   terminator-gruvbox-dark
   ;;   terminator-gruvbox-light
   (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
-  :config
+
   (with-eval-after-load 'vterm
     (terminal-colors-vterm-mode 1))
 
@@ -79,7 +79,7 @@ Step 2: Add the following code to the Emacs init file:
              :type git
              :host github
              :repo "jamescherti/terminal-colors.el")
-  :custom
+  :config
   ;; Builtin themes:
   ;;   gnome-terminal-tango-dark (default)
   ;;   gnome-terminal-tango-light
@@ -90,8 +90,8 @@ Step 2: Add the following code to the Emacs init file:
   ;;   terminator-solarized
   ;;   terminator-gruvbox-dark
   ;;   terminator-gruvbox-light
-  (terminal-colors-default-theme "gnome-terminal-tango-dark")
-  :config
+  (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
+
   (with-eval-after-load 'vterm
     (terminal-colors-vterm-mode 1))
 
@@ -151,6 +151,9 @@ doom sync
 Enable the global minor mode corresponding to each terminal emulator you use:
 
 ```emacs-lisp
+;; Set `terminal-colors-default-theme' to choose the default palette loaded on initialization
+(setq terminal-colors-default-theme "gnome-terminal-tango-dark")
+
 ;; For vterm
 (terminal-colors-vterm-mode 1)
 
@@ -162,12 +165,6 @@ Enable the global minor mode corresponding to each terminal emulator you use:
 ```
 
 ### Changing the terminal color scheme
-
-Set `terminal-colors-default-theme` to choose the default palette loaded on initialization:
-
-```emacs-lisp
-(setq terminal-colors-default-theme "terminator-gruvbox-dark")
-```
 
 To switch terminal themes interactively during an Emacs session, run:
 
