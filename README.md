@@ -8,9 +8,9 @@
 
 Is your favorite theme causing your Emacs terminal to have washed-out colors, poor contrast, and hard-to-read output?
 
-The **[terminal-colors](https://github.com/jamescherti/terminal-colors.el)** gives Emacs terminals a fresh look with dedicated terminal color schemes for vterm, eat, and term (ansi-term). It allows keeping your favorite Emacs theme while giving the Emacs terminal its own colors, similar to those of standalone terminals like `gnome-terminal`.
+The **[terminal-colors](https://github.com/jamescherti/terminal-colors.el)** package gives Emacs terminals a fresh look with dedicated terminal color schemes for `vterm`, `eat`, and `term` (`ansi-term`). It allows keeping your favorite Emacs theme while giving the Emacs terminal its own colors, similar to those of standalone terminals like `gnome-terminal`.
 
-By default, Emacs terminal emulators inherit their ANSI colors and background from the active Emacs theme, which can result in low contrast or unreadable text in terminal applications. The **terminal-colors** package decouples terminal colors from the global Emacs theme, applying dedicated palettes and buffer-local foreground and background colors modeled after standalone terminal emulators.
+By default, Emacs terminal emulators inherit their ANSI colors and background from the active Emacs theme, which can result in low contrast or unreadable text in terminal applications. The **terminal-colors** package decouples terminal colors from the global Emacs theme, applying dedicated palettes and buffer-local foreground and background colors.
 
 ![](https://www.jamescherti.com/misc/screenshot-minimal-emacs-2.png)
 *(The terminal-colors theme shown in the screenshot above is 'gnome-terminal-tango-dark'.)*
@@ -26,14 +26,6 @@ Meanwhile, if you open a standalone terminal emulator like GNOME Terminal, Konso
 Because Emacs terminal emulators inherit their ANSI colors and default background directly from your active Emacs theme, switching to a new theme for your code often breaks the contrast in your terminal buffers.
 
 The **terminal-colors** package solves this by decoupling your terminal buffers from your global Emacs theme. It brings battle-tested color palettes from standalone terminals (such as GNOME Terminal Tango, Konsole, Solarized, and Gruvbox) directly into `vterm`, `eat`, and `term` (`ansi-term`). Your editing buffers keep your favorite Emacs theme, while your terminal buffers get a dedicated, high-contrast color scheme with buffer-local foreground and background colors.
-
-## Features
-
-- Unified 16-color ANSI palettes and buffer-local foreground/background colors across `vterm`, `eat`, and `term`.
-- Built-in palettes from popular terminal emulators (GNOME Terminal, Konsole, and Terminator).
-- Buffer-local face remapping for `default` and `fringe` faces in terminal buffers without affecting standard editing buffers.
-- Automatic reapplication of the active terminal palette when switching Emacs color themes via `load-theme`.
-- Interactive palette switching with live redrawing of open terminal buffers via `M-x terminal-colors-load`.
 
 ## Installation
 
@@ -156,14 +148,14 @@ Enable the global minor mode corresponding to each terminal emulator you use:
 ;; Set `terminal-colors-default-theme' to choose the default palette loaded on initialization
 (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
 
-;; For vterm
-(terminal-colors-vterm-mode 1)
+(with-eval-after-load 'vterm
+  (terminal-colors-vterm-mode 1))
 
-;; For Eat
-(terminal-colors-eat-mode 1)
+(with-eval-after-load 'eat
+  (terminal-colors-eat-mode 1))
 
-;; For built-in term / ansi-term
-(terminal-colors-term-mode 1)
+(with-eval-after-load 'term
+  (terminal-colors-term-mode 1))
 ```
 
 ### Changing the terminal color scheme
@@ -193,6 +185,14 @@ The following terminal themes are included out of the box:
 - `terminator-solarized`
 - `terminator-gruvbox-dark`
 - `terminator-gruvbox-light`
+
+## Features
+
+- Unified 16-color ANSI palettes and buffer-local foreground/background colors across `vterm`, `eat`, and `term`.
+- Built-in palettes from popular terminal emulators (GNOME Terminal, Konsole, and Terminator).
+- Buffer-local face remapping for `default` and `fringe` faces in terminal buffers without affecting standard editing buffers.
+- Automatic reapplication of the active terminal palette when switching Emacs color themes via `load-theme`.
+- Interactive palette switching with live redrawing of open terminal buffers via `M-x terminal-colors-load`.
 
 ## Author and License
 
