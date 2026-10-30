@@ -395,6 +395,56 @@
   :group 'terminal-colors
   :version "28.1")
 
+;;; Frame color
+
+(defvar terminal-colors-frame-color--theme-background nil
+  "The background color of the currently loaded Emacs theme.")
+
+(defvar terminal-colors-frame-color--theme-foreground nil
+  "The foreground color of the currently loaded Emacs theme.")
+
+(defcustom terminal-colors-frame-color-vterm-update-frame-color nil
+  "Update the frame background and foreground color."
+  :type 'boolean
+  :group 'terminal-colors-vterm)
+
+;; (when terminal-colors-frame-color-vterm-update-frame-color
+;;    (terminal-colors-frame-color--save-theme-fg-bg)
+;;    (add-hook 'window-configuration-change-hook
+;;              #'terminal-colors-frame-color--auto-change)
+;;
+;;    (add-hook 'terminal-colors--after-load-hook
+;;              #'terminal-colors-frame-color--save-theme-fg-bg))
+
+(defun terminal-colors-frame-color--auto-change (&rest _)
+  "Update the frame's bg and fg colors based on the buffer's major mode."
+  ;; TODO standardize detecting the major mode using a list
+  (when terminal-colors-frame-color-vterm-update-frame-color
+    (let* ((term-p (or (derived-mode-p 'vterm-mode)
+                       (derived-mode-p 'term-mode)
+                       (derived-mode-p 'eat-mode)))
+           (fg-color (if (and term-p
+                              (bound-and-true-p terminal-colors--foreground))
+                         terminal-colors--foreground
+                       terminal-colors-frame-color--theme-foreground))
+           (bg-color (if (and term-p
+                              (bound-and-true-p terminal-colors--background))
+                         terminal-colors--background
+                       terminal-colors-frame-color--theme-background)))
+      (when (and fg-color (not (member fg-color
+                                       '(unspecified-fg "unspecified-fg"))))
+        (set-frame-parameter nil 'foreground-color fg-color))
+      (when (and bg-color (not (member bg-color
+                                       '(unspecified-bg "unspecified-bg"))))
+        (set-frame-parameter nil 'background-color bg-color)))))
+
+(defun terminal-colors-frame-color--save-theme-fg-bg (&rest _)
+  "Save the foreground and background color of the current theme."
+  (setq terminal-colors-frame-color--theme-background
+        (face-background 'default))
+  (setq terminal-colors-frame-color--theme-foreground
+        (face-foreground 'default)))
+
 ;;; Functions
 
 (defun terminal-colors--apply ()
@@ -576,56 +626,6 @@ DEFAULT-FG-BG is the name of an item in
                theme default-colors))
     (run-hooks 'terminal-colors--after-load-hook)))
 
-;;; Frame color
-
-(defvar terminal-colors-frame-color--theme-background nil
-  "The background color of the currently loaded Emacs theme.")
-
-(defvar terminal-colors-frame-color--theme-foreground nil
-  "The foreground color of the currently loaded Emacs theme.")
-
-(defcustom terminal-colors-frame-color-vterm-update-frame-color nil
-  "Update the frame background and foreground color."
-  :type 'boolean
-  :group 'terminal-colors-vterm)
-
-;; (when terminal-colors-frame-color-vterm-update-frame-color
-;;    (terminal-colors-frame-color--save-theme-fg-bg)
-;;    (add-hook 'window-configuration-change-hook
-;;              #'terminal-colors-frame-color--auto-change)
-;;
-;;    (add-hook 'terminal-colors--after-load-hook
-;;              #'terminal-colors-frame-color--save-theme-fg-bg))
-
-(defun terminal-colors-frame-color--auto-change (&rest _)
-  "Update the frame's bg and fg colors based on the buffer's major mode."
-  ;; TODO standardize detecting the major mode using a list
-  (when terminal-colors-frame-color-vterm-update-frame-color
-    (let* ((term-p (or (derived-mode-p 'vterm-mode)
-                       (derived-mode-p 'term-mode)
-                       (derived-mode-p 'eat-mode)))
-           (fg-color (if (and term-p
-                              (bound-and-true-p terminal-colors--foreground))
-                         terminal-colors--foreground
-                       terminal-colors-frame-color--theme-foreground))
-           (bg-color (if (and term-p
-                              (bound-and-true-p terminal-colors--background))
-                         terminal-colors--background
-                       terminal-colors-frame-color--theme-background)))
-      (when (and fg-color (not (member fg-color
-                                       '(unspecified-fg "unspecified-fg"))))
-        (set-frame-parameter nil 'foreground-color fg-color))
-      (when (and bg-color (not (member bg-color
-                                       '(unspecified-bg "unspecified-bg"))))
-        (set-frame-parameter nil 'background-color bg-color)))))
-
-(defun terminal-colors-frame-color--save-theme-fg-bg (&rest _)
-  "Save the foreground and background color of the current theme."
-  (setq terminal-colors-frame-color--theme-background
-        (face-background 'default))
-  (setq terminal-colors-frame-color--theme-foreground
-        (face-foreground 'default)))
-
 ;;; Eat
 
 (defun terminal-colors-eat--set-foreground-background ()
@@ -785,6 +785,7 @@ DEFAULT-FG-BG is the name of an item in
   :group 'terminal-colors-eat
   (if terminal-colors-eat-mode
       (progn
+        (require 'eat)
         (add-hook 'terminal-colors--after-load-hook
                   #'terminal-colors-eat--apply)
         (add-hook 'terminal-colors--reset-hook #'terminal-colors-eat--reset)
@@ -830,163 +831,164 @@ DEFAULT-FG-BG is the name of an item in
 
 (defun terminal-colors-term--apply ()
   "Apply the `term' theme."
-  (unless terminal-colors-term--backup-color-vector
-    (setq terminal-colors-term--backup-color-vector ansi-term-color-vector))
+  (when (featurep 'term)
+    (unless terminal-colors-term--backup-color-vector
+      (setq terminal-colors-term--backup-color-vector ansi-term-color-vector))
 
-  (setq ansi-term-color-vector [term terminal-colors-term-color-black
-                                     terminal-colors-term-color-red
-                                     terminal-colors-term-color-green
-                                     terminal-colors-term-color-yellow
-                                     terminal-colors-term-color-blue
-                                     terminal-colors-term-color-magenta
-                                     terminal-colors-term-color-cyan
-                                     terminal-colors-term-color-white
-                                     terminal-colors-term-color-bright-black
-                                     terminal-colors-term-color-bright-red
-                                     terminal-colors-term-color-bright-green
-                                     terminal-colors-term-color-bright-yellow
-                                     terminal-colors-term-color-bright-blue
-                                     terminal-colors-term-color-bright-magenta
-                                     terminal-colors-term-color-bright-cyan
-                                     terminal-colors-term-color-bright-white])
+    (setq ansi-term-color-vector [term terminal-colors-term-color-black
+                                       terminal-colors-term-color-red
+                                       terminal-colors-term-color-green
+                                       terminal-colors-term-color-yellow
+                                       terminal-colors-term-color-blue
+                                       terminal-colors-term-color-magenta
+                                       terminal-colors-term-color-cyan
+                                       terminal-colors-term-color-white
+                                       terminal-colors-term-color-bright-black
+                                       terminal-colors-term-color-bright-red
+                                       terminal-colors-term-color-bright-green
+                                       terminal-colors-term-color-bright-yellow
+                                       terminal-colors-term-color-bright-blue
+                                       terminal-colors-term-color-bright-magenta
+                                       terminal-colors-term-color-bright-cyan
+                                       terminal-colors-term-color-bright-white])
 
-  ;; term
-  (set-face-attribute 'term nil
-                      :foreground terminal-colors--foreground
-                      :background terminal-colors--background)
+    ;; term
+    (set-face-attribute 'term nil
+                        :foreground terminal-colors--foreground
+                        :background terminal-colors--background)
 
-  (set-face-attribute 'term-color-black nil
-                      :foreground terminal-colors--color-black
-                      :background terminal-colors--color-black)
+    (set-face-attribute 'term-color-black nil
+                        :foreground terminal-colors--color-black
+                        :background terminal-colors--color-black)
 
-  (set-face-attribute 'term-color-red nil
-                      :foreground terminal-colors--color-red
-                      :background terminal-colors--color-red)
+    (set-face-attribute 'term-color-red nil
+                        :foreground terminal-colors--color-red
+                        :background terminal-colors--color-red)
 
-  (set-face-attribute 'term-color-green nil
-                      :foreground terminal-colors--color-green
-                      :background terminal-colors--color-green)
+    (set-face-attribute 'term-color-green nil
+                        :foreground terminal-colors--color-green
+                        :background terminal-colors--color-green)
 
-  (set-face-attribute 'term-color-yellow nil
-                      :foreground terminal-colors--color-yellow
-                      :background terminal-colors--color-yellow)
+    (set-face-attribute 'term-color-yellow nil
+                        :foreground terminal-colors--color-yellow
+                        :background terminal-colors--color-yellow)
 
-  (set-face-attribute 'term-color-blue nil
-                      :foreground terminal-colors--color-blue
-                      :background terminal-colors--color-blue)
+    (set-face-attribute 'term-color-blue nil
+                        :foreground terminal-colors--color-blue
+                        :background terminal-colors--color-blue)
 
-  (set-face-attribute 'term-color-magenta nil
-                      :foreground terminal-colors--color-magenta
-                      :background terminal-colors--color-magenta)
+    (set-face-attribute 'term-color-magenta nil
+                        :foreground terminal-colors--color-magenta
+                        :background terminal-colors--color-magenta)
 
-  (set-face-attribute 'term-color-cyan nil
-                      :foreground terminal-colors--color-cyan
-                      :background terminal-colors--color-cyan)
+    (set-face-attribute 'term-color-cyan nil
+                        :foreground terminal-colors--color-cyan
+                        :background terminal-colors--color-cyan)
 
-  (set-face-attribute 'term-color-white nil
-                      :foreground terminal-colors--color-white
-                      :background terminal-colors--color-white)
+    (set-face-attribute 'term-color-white nil
+                        :foreground terminal-colors--color-white
+                        :background terminal-colors--color-white)
 
-  (set-face-attribute 'term-color-bright-black nil
-                      :foreground terminal-colors--color-bright-black
-                      :background terminal-colors--color-bright-black)
+    (set-face-attribute 'term-color-bright-black nil
+                        :foreground terminal-colors--color-bright-black
+                        :background terminal-colors--color-bright-black)
 
-  (set-face-attribute 'term-color-bright-red nil
-                      :foreground terminal-colors--color-bright-red
-                      :background terminal-colors--color-bright-red)
+    (set-face-attribute 'term-color-bright-red nil
+                        :foreground terminal-colors--color-bright-red
+                        :background terminal-colors--color-bright-red)
 
-  (set-face-attribute 'term-color-bright-green nil
-                      :foreground terminal-colors--color-bright-green
-                      :background terminal-colors--color-bright-green)
+    (set-face-attribute 'term-color-bright-green nil
+                        :foreground terminal-colors--color-bright-green
+                        :background terminal-colors--color-bright-green)
 
-  (set-face-attribute 'term-color-bright-yellow nil
-                      :foreground terminal-colors--color-bright-yellow
-                      :background terminal-colors--color-bright-yellow)
+    (set-face-attribute 'term-color-bright-yellow nil
+                        :foreground terminal-colors--color-bright-yellow
+                        :background terminal-colors--color-bright-yellow)
 
-  (set-face-attribute 'term-color-bright-blue nil
-                      :foreground terminal-colors--color-bright-blue
-                      :background terminal-colors--color-bright-blue)
+    (set-face-attribute 'term-color-bright-blue nil
+                        :foreground terminal-colors--color-bright-blue
+                        :background terminal-colors--color-bright-blue)
 
-  (set-face-attribute 'term-color-bright-magenta nil
-                      :foreground terminal-colors--color-bright-magenta
-                      :background terminal-colors--color-bright-magenta)
+    (set-face-attribute 'term-color-bright-magenta nil
+                        :foreground terminal-colors--color-bright-magenta
+                        :background terminal-colors--color-bright-magenta)
 
-  (set-face-attribute 'term-color-bright-cyan nil
-                      :foreground terminal-colors--color-bright-cyan
-                      :background terminal-colors--color-bright-cyan)
+    (set-face-attribute 'term-color-bright-cyan nil
+                        :foreground terminal-colors--color-bright-cyan
+                        :background terminal-colors--color-bright-cyan)
 
-  (set-face-attribute 'term-color-bright-white nil
-                      :foreground terminal-colors--color-bright-white
-                      :background terminal-colors--color-bright-white)
+    (set-face-attribute 'term-color-bright-white nil
+                        :foreground terminal-colors--color-bright-white
+                        :background terminal-colors--color-bright-white))
 
-  ;; ansi-color
-  ;; (set-face-attribute 'ansi-color-black nil
-  ;;                     :foreground terminal-colors--color-black
-  ;;                     :background terminal-colors--color-black)
-  ;;
-  ;; (set-face-attribute 'ansi-color-red nil
-  ;;                     :foreground terminal-colors--color-red
-  ;;                     :background terminal-colors--color-red)
-  ;;
-  ;; (set-face-attribute 'ansi-color-green nil
-  ;;                     :foreground terminal-colors--color-green
-  ;;                     :background terminal-colors--color-green)
-  ;;
-  ;; (set-face-attribute 'ansi-color-yellow nil
-  ;;                     :foreground terminal-colors--color-yellow
-  ;;                     :background terminal-colors--color-yellow)
-  ;;
-  ;; (set-face-attribute 'ansi-color-blue nil
-  ;;                     :foreground terminal-colors--color-blue
-  ;;                     :background terminal-colors--color-blue)
-  ;;
-  ;; (set-face-attribute 'ansi-color-magenta nil
-  ;;                     :foreground terminal-colors--color-magenta
-  ;;                     :background terminal-colors--color-magenta)
-  ;;
-  ;; (set-face-attribute 'ansi-color-cyan nil
-  ;;                     :foreground terminal-colors--color-cyan
-  ;;                     :background terminal-colors--color-cyan)
-  ;;
-  ;; (set-face-attribute 'ansi-color-white nil
-  ;;                     :foreground terminal-colors--color-white
-  ;;                     :background terminal-colors--color-white)
-  ;;
-  ;; (set-face-attribute 'ansi-color-bright-black nil
-  ;;                     :foreground terminal-colors--color-bright-black
-  ;;                     :background terminal-colors--color-bright-black)
-  ;;
-  ;; (set-face-attribute 'ansi-color-bright-red nil
-  ;;                     :foreground terminal-colors--color-bright-red
-  ;;                     :background terminal-colors--color-bright-red)
-  ;;
-  ;; (set-face-attribute 'ansi-color-bright-green nil
-  ;;                     :foreground terminal-colors--color-bright-green
-  ;;                     :background terminal-colors--color-bright-green)
-  ;;
-  ;; (set-face-attribute 'ansi-color-bright-yellow nil
-  ;;                     :foreground terminal-colors--color-bright-yellow
-  ;;                     :background terminal-colors--color-bright-yellow)
-  ;;
-  ;; (set-face-attribute 'ansi-color-bright-blue nil
-  ;;                     :foreground terminal-colors--color-bright-blue
-  ;;                     :background terminal-colors--color-bright-blue)
-  ;;
-  ;; (set-face-attribute 'ansi-color-bright-magenta nil
-  ;;                     :foreground terminal-colors--color-bright-magenta
-  ;;                     :background terminal-colors--color-bright-magenta)
-  ;;
-  ;; (set-face-attribute 'ansi-color-bright-cyan nil
-  ;;                     :foreground terminal-colors--color-bright-cyan
-  ;;                     :background terminal-colors--color-bright-cyan)
-  ;;
-  ;; (set-face-attribute 'ansi-color-bright-white nil
-  ;;                     :foreground terminal-colors--color-bright-white
-  ;;                     :background terminal-colors--color-bright-white)
+    ;; ansi-color
+    ;; (set-face-attribute 'ansi-color-black nil
+    ;;                     :foreground terminal-colors--color-black
+    ;;                     :background terminal-colors--color-black)
+    ;;
+    ;; (set-face-attribute 'ansi-color-red nil
+    ;;                     :foreground terminal-colors--color-red
+    ;;                     :background terminal-colors--color-red)
+    ;;
+    ;; (set-face-attribute 'ansi-color-green nil
+    ;;                     :foreground terminal-colors--color-green
+    ;;                     :background terminal-colors--color-green)
+    ;;
+    ;; (set-face-attribute 'ansi-color-yellow nil
+    ;;                     :foreground terminal-colors--color-yellow
+    ;;                     :background terminal-colors--color-yellow)
+    ;;
+    ;; (set-face-attribute 'ansi-color-blue nil
+    ;;                     :foreground terminal-colors--color-blue
+    ;;                     :background terminal-colors--color-blue)
+    ;;
+    ;; (set-face-attribute 'ansi-color-magenta nil
+    ;;                     :foreground terminal-colors--color-magenta
+    ;;                     :background terminal-colors--color-magenta)
+    ;;
+    ;; (set-face-attribute 'ansi-color-cyan nil
+    ;;                     :foreground terminal-colors--color-cyan
+    ;;                     :background terminal-colors--color-cyan)
+    ;;
+    ;; (set-face-attribute 'ansi-color-white nil
+    ;;                     :foreground terminal-colors--color-white
+    ;;                     :background terminal-colors--color-white)
+    ;;
+    ;; (set-face-attribute 'ansi-color-bright-black nil
+    ;;                     :foreground terminal-colors--color-bright-black
+    ;;                     :background terminal-colors--color-bright-black)
+    ;;
+    ;; (set-face-attribute 'ansi-color-bright-red nil
+    ;;                     :foreground terminal-colors--color-bright-red
+    ;;                     :background terminal-colors--color-bright-red)
+    ;;
+    ;; (set-face-attribute 'ansi-color-bright-green nil
+    ;;                     :foreground terminal-colors--color-bright-green
+    ;;                     :background terminal-colors--color-bright-green)
+    ;;
+    ;; (set-face-attribute 'ansi-color-bright-yellow nil
+    ;;                     :foreground terminal-colors--color-bright-yellow
+    ;;                     :background terminal-colors--color-bright-yellow)
+    ;;
+    ;; (set-face-attribute 'ansi-color-bright-blue nil
+    ;;                     :foreground terminal-colors--color-bright-blue
+    ;;                     :background terminal-colors--color-bright-blue)
+    ;;
+    ;; (set-face-attribute 'ansi-color-bright-magenta nil
+    ;;                     :foreground terminal-colors--color-bright-magenta
+    ;;                     :background terminal-colors--color-bright-magenta)
+    ;;
+    ;; (set-face-attribute 'ansi-color-bright-cyan nil
+    ;;                     :foreground terminal-colors--color-bright-cyan
+    ;;                     :background terminal-colors--color-bright-cyan)
+    ;;
+    ;; (set-face-attribute 'ansi-color-bright-white nil
+    ;;                     :foreground terminal-colors--color-bright-white
+    ;;                     :background terminal-colors--color-bright-white)
 
-  (dolist (buf (buffer-list))
-    (with-current-buffer buf
-      (terminal-colors-term--set-foreground-background))))
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (terminal-colors-term--set-foreground-background))))
 
 ;;;###autoload
 (define-minor-mode terminal-colors-term-mode
@@ -996,6 +998,7 @@ DEFAULT-FG-BG is the name of an item in
   :group 'terminal-colors-term
   (if terminal-colors-term-mode
       (progn
+        (require 'term)
         (add-hook 'terminal-colors--after-load-hook
                   #'terminal-colors-term--apply)
         (add-hook 'terminal-colors--reset-hook
@@ -1217,6 +1220,7 @@ ARGS are additional property keywords like :foreground or :inverse-video."
   :group 'terminal-colors-vterm
   (if terminal-colors-vterm-mode
       (progn
+        (require 'vterm)
         (advice-add 'vterm--get-color :around #'terminal-colors-vterm--get-color-override)
         (add-hook 'terminal-colors--after-load-hook
                   #'terminal-colors-vterm--apply)
