@@ -462,9 +462,9 @@
   "Restore face specs and frame attributes from SAVED."
   (dolist (entry saved)
     (let ((face (car entry)))
+      (face-spec-set face (cadr entry) 'face-override-spec)
       (dolist (attribute (cdr (assq t (nth 2 entry))))
         (set-face-attribute face t (car attribute) (cdr attribute)))
-      (face-spec-set face (cadr entry) 'face-override-spec)
       (dolist (frame-attributes (nth 2 entry))
         (let ((frame (car frame-attributes)))
           (when (and (not (eq frame t)) (frame-live-p frame))
@@ -702,13 +702,7 @@ DEFAULT-FG-BG is the name of an item in
                eat-term-color-6 eat-term-color-7 eat-term-color-8
                eat-term-color-9 eat-term-color-10 eat-term-color-11
                eat-term-color-12 eat-term-color-13 eat-term-color-14
-               eat-term-color-15 eat-term-color-black eat-term-color-red
-               eat-term-color-green eat-term-color-yellow eat-term-color-blue
-               eat-term-color-magenta eat-term-color-cyan eat-term-color-white
-               eat-term-color-bright-black eat-term-color-bright-red
-               eat-term-color-bright-green eat-term-color-bright-yellow
-               eat-term-color-bright-blue eat-term-color-bright-magenta
-               eat-term-color-bright-cyan eat-term-color-bright-white))))
+               eat-term-color-15))))
     (face-spec-set 'eat-term-color-0
                    `((t (:foreground ,terminal-colors--color-black
                                      :background ,terminal-colors--color-black))))
@@ -770,70 +764,6 @@ DEFAULT-FG-BG is the name of an item in
                                      :background ,terminal-colors--color-bright-cyan))))
 
     (face-spec-set 'eat-term-color-15
-                   `((t (:foreground ,terminal-colors--color-bright-white
-                                     :background ,terminal-colors--color-bright-white))))
-
-    (face-spec-set 'eat-term-color-black
-                   `((t (:foreground ,terminal-colors--color-black
-                                     :background ,terminal-colors--color-black))))
-
-    (face-spec-set 'eat-term-color-red
-                   `((t (:foreground ,terminal-colors--color-red
-                                     :background ,terminal-colors--color-red))))
-
-    (face-spec-set 'eat-term-color-green
-                   `((t (:foreground ,terminal-colors--color-green
-                                     :background ,terminal-colors--color-green))))
-
-    (face-spec-set 'eat-term-color-yellow
-                   `((t (:foreground ,terminal-colors--color-yellow
-                                     :background ,terminal-colors--color-yellow))))
-
-    (face-spec-set 'eat-term-color-blue
-                   `((t (:foreground ,terminal-colors--color-blue
-                                     :background ,terminal-colors--color-blue))))
-
-    (face-spec-set 'eat-term-color-magenta
-                   `((t (:foreground ,terminal-colors--color-magenta
-                                     :background ,terminal-colors--color-magenta))))
-
-    (face-spec-set 'eat-term-color-cyan
-                   `((t (:foreground ,terminal-colors--color-cyan
-                                     :background ,terminal-colors--color-cyan))))
-
-    (face-spec-set 'eat-term-color-white
-                   `((t (:foreground ,terminal-colors--color-white
-                                     :background ,terminal-colors--color-white))))
-
-    (face-spec-set 'eat-term-color-bright-black
-                   `((t (:foreground ,terminal-colors--color-bright-black
-                                     :background ,terminal-colors--color-bright-black))))
-
-    (face-spec-set 'eat-term-color-bright-red
-                   `((t (:foreground ,terminal-colors--color-bright-red
-                                     :background ,terminal-colors--color-bright-red))))
-
-    (face-spec-set 'eat-term-color-bright-green
-                   `((t (:foreground ,terminal-colors--color-bright-green
-                                     :background ,terminal-colors--color-bright-green))))
-
-    (face-spec-set 'eat-term-color-bright-yellow
-                   `((t (:foreground ,terminal-colors--color-bright-yellow
-                                     :background ,terminal-colors--color-bright-yellow))))
-
-    (face-spec-set 'eat-term-color-bright-blue
-                   `((t (:foreground ,terminal-colors--color-bright-blue
-                                     :background ,terminal-colors--color-bright-blue))))
-
-    (face-spec-set 'eat-term-color-bright-magenta
-                   `((t (:foreground ,terminal-colors--color-bright-magenta
-                                     :background ,terminal-colors--color-bright-magenta))))
-
-    (face-spec-set 'eat-term-color-bright-cyan
-                   `((t (:foreground ,terminal-colors--color-bright-cyan
-                                     :background ,terminal-colors--color-bright-cyan))))
-
-    (face-spec-set 'eat-term-color-bright-white
                    `((t (:foreground ,terminal-colors--color-bright-white
                                      :background ,terminal-colors--color-bright-white))))))
 
@@ -1201,13 +1131,18 @@ ARGS are additional property keywords like :foreground or :inverse-video."
 
      ;; Why handle foreground for Index -1?
      ;; 1. We only override when `terminal-colors-vterm-mode' is active.
-     ;; 2. We step aside if `is-inverse' is true.
+     ;; 2. We step aside if `is-inverse' is true, or if `:underline' is
+     ;;    present and `vterm-color-underline' defines an explicit foreground.
      ;; 3. Index -1 represents the default foreground text color. We intercept
      ;;    this to apply the theme's specific foreground color.
      ((and (bound-and-true-p terminal-colors-vterm-mode)
            is-foreground
            (not is-inverse)
-           (not (memq :underline args))
+           (not (and (memq :underline args)
+                     (facep 'vterm-color-underline)
+                     (not (eq (face-attribute 'vterm-color-underline
+                                              :foreground nil nil)
+                              'unspecified))))
            (= index -1)
            (bound-and-true-p terminal-colors--foreground))
       terminal-colors--foreground)
