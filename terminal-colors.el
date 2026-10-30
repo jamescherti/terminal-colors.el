@@ -409,34 +409,43 @@
   :type 'boolean
   :group 'terminal-colors-vterm)
 
-(defun terminal-colors-frame-color--auto-change (&rest _)
-  "Update the frame's bg and fg colors based on the buffer's major mode."
-  ;; TODO standardize detecting the major mode using a list
-  (when terminal-colors-frame-color-vterm-update-frame-color
-    (let* ((term-p (or (derived-mode-p 'vterm-mode)
-                       (derived-mode-p 'term-mode)
-                       (derived-mode-p 'eat-mode)))
-           (fg-color (if (and term-p
-                              (bound-and-true-p terminal-colors--foreground))
-                         terminal-colors--foreground
-                       terminal-colors-frame-color--theme-foreground))
-           (bg-color (if (and term-p
-                              (bound-and-true-p terminal-colors--background))
-                         terminal-colors--background
-                       terminal-colors-frame-color--theme-background)))
-      (when (and fg-color (not (member fg-color
-                                       '(unspecified-fg "unspecified-fg"))))
-        (set-frame-parameter nil 'foreground-color fg-color))
-      (when (and bg-color (not (member bg-color
-                                       '(unspecified-bg "unspecified-bg"))))
-        (set-frame-parameter nil 'background-color bg-color)))))
-
 (defun terminal-colors-frame-color--save-theme-fg-bg (&rest _)
   "Save the foreground and background color of the current theme."
   (setq terminal-colors-frame-color--theme-background
         (face-background 'default))
   (setq terminal-colors-frame-color--theme-foreground
         (face-foreground 'default)))
+
+(defun terminal-colors-frame-color--auto-change (&rest _)
+  "Update the frame's bg and fg colors based on the buffer's major mode."
+  ;; TODO standardize detecting the major mode using a list
+  (when terminal-colors-frame-color-vterm-update-frame-color
+    (unless (and terminal-colors-frame-color--theme-background
+                 terminal-colors-frame-color--theme-foreground)
+      (terminal-colors-frame-color--save-theme-fg-bg))
+    (let ((buf (window-buffer (selected-window))))
+      (when (buffer-live-p buf)
+        (with-current-buffer buf
+          (let* ((term-p (or (and (derived-mode-p 'vterm-mode)
+                                  (bound-and-true-p terminal-colors-vterm-mode))
+                             (and (derived-mode-p 'term-mode)
+                                  (bound-and-true-p terminal-colors-term-mode))
+                             (and (derived-mode-p 'eat-mode)
+                                  (bound-and-true-p terminal-colors-eat-mode))))
+                 (fg-color (if (and term-p
+                                    (bound-and-true-p terminal-colors--foreground))
+                               terminal-colors--foreground
+                             terminal-colors-frame-color--theme-foreground))
+                 (bg-color (if (and term-p
+                                    (bound-and-true-p terminal-colors--background))
+                               terminal-colors--background
+                             terminal-colors-frame-color--theme-background)))
+            (when (and fg-color (not (member fg-color
+                                             '(unspecified-fg "unspecified-fg"))))
+              (set-frame-parameter nil 'foreground-color fg-color))
+            (when (and bg-color (not (member bg-color
+                                             '(unspecified-bg "unspecified-bg"))))
+              (set-frame-parameter nil 'background-color bg-color))))))))
 
 ;;; Functions
 
@@ -454,14 +463,16 @@
 (defun terminal-colors--restore-faces (saved)
   "Restore face specs and frame attributes from SAVED."
   (dolist (entry saved)
-    (let ((face (car entry)))
+    (let ((face (car entry))
+          (default-attributes (cdr (assq t (nth 2 entry)))))
       (face-spec-set face (cadr entry) 'face-override-spec)
-      (dolist (attribute (cdr (assq t (nth 2 entry))))
+      (dolist (attribute default-attributes)
         (set-face-attribute face t (car attribute) (cdr attribute)))
-      (dolist (frame-attributes (nth 2 entry))
-        (let ((frame (car frame-attributes)))
-          (when (and (not (eq frame t)) (frame-live-p frame))
-            (dolist (attribute (cdr frame-attributes))
+      (dolist (frame (frame-list))
+        (when (frame-live-p frame)
+          (let ((attributes (or (cdr (assq frame (nth 2 entry)))
+                                default-attributes)))
+            (dolist (attribute attributes)
               (set-face-attribute face frame
                                   (car attribute) (cdr attribute)))))))))
 
@@ -538,6 +549,17 @@
       (when terminal-colors--remap-cookies
         (mapc #'face-remap-remove-relative terminal-colors--remap-cookies)
         (setq terminal-colors--remap-cookies nil))))
+  (when terminal-colors-frame-color-vterm-update-frame-color
+    (when (and terminal-colors-frame-color--theme-foreground
+               (not (member terminal-colors-frame-color--theme-foreground
+                            '(unspecified-fg "unspecified-fg"))))
+      (set-frame-parameter nil 'foreground-color
+                           terminal-colors-frame-color--theme-foreground))
+    (when (and terminal-colors-frame-color--theme-background
+               (not (member terminal-colors-frame-color--theme-background
+                            '(unspecified-bg "unspecified-bg"))))
+      (set-frame-parameter nil 'background-color
+                           terminal-colors-frame-color--theme-background)))
   (run-hooks 'terminal-colors--reset-hook))
 
 (defun terminal-colors--load-default-default-fg-bg (default-fg-bg)
@@ -604,6 +626,7 @@ DEFAULT-FG-BG is the name of an item in
   (terminal-colors--reset)
   (unwind-protect
       (apply function args)
+    (terminal-colors-frame-color--save-theme-fg-bg)
     (terminal-colors--reload-theme)))
 
 (defun terminal-colors--maybe-uninit ()
@@ -611,6 +634,10 @@ DEFAULT-FG-BG is the name of an item in
   (unless (or (bound-and-true-p terminal-colors-eat-mode)
               (bound-and-true-p terminal-colors-term-mode)
               (bound-and-true-p terminal-colors-vterm-mode))
+    (remove-hook 'window-buffer-change-functions
+                 #'terminal-colors-frame-color--auto-change)
+    (remove-hook 'window-selection-change-functions
+                 #'terminal-colors-frame-color--auto-change)
     (advice-remove 'load-theme #'terminal-colors--load-theme-around)
     (setq terminal-colors--init-p nil)))
 
@@ -618,7 +645,12 @@ DEFAULT-FG-BG is the name of an item in
   "Init terminal themes."
   (if terminal-colors--init-p
       (run-hooks 'terminal-colors--after-load-hook)
+    (terminal-colors-frame-color--save-theme-fg-bg)
     (terminal-colors--reload-theme)
+    (add-hook 'window-buffer-change-functions
+              #'terminal-colors-frame-color--auto-change)
+    (add-hook 'window-selection-change-functions
+              #'terminal-colors-frame-color--auto-change)
     (advice-add 'load-theme :around #'terminal-colors--load-theme-around)
     (setq terminal-colors--init-p t)))
 
@@ -657,7 +689,8 @@ DEFAULT-FG-BG is the name of an item in
     (when (called-interactively-p 'interactive)
       (message "Theme '%s' loaded with default colors %s."
                theme default-colors))
-    (run-hooks 'terminal-colors--after-load-hook)))
+    (run-hooks 'terminal-colors--after-load-hook)
+    (terminal-colors-frame-color--auto-change)))
 
 ;;; Eat
 
@@ -1000,7 +1033,6 @@ ARGS are the arguments passed to ORIG-FUN."
 
 (defun terminal-colors-vterm--set-foreground-background ()
   "Set the `vterm' foreground and background color."
-  ;; (terminal-colors-frame-color--auto-change)
   (when (derived-mode-p 'vterm-mode)
     (terminal-colors--set-foreground-background)))
 
