@@ -30,7 +30,31 @@ The **terminal-colors** package solves this by decoupling your terminal buffers 
 
 ## Installation
 
-### Emacs: use-package and straight (Emacs version < 30)
+### use-package and :vc (Built-in feature in Emacs version >= 30)
+
+To install *terminal-colors* with `use-package` and `:vc` (Emacs >= 30):
+
+```emacs-lisp
+(use-package terminal-colors
+  :vc (:url "https://github.com/jamescherti/terminal-colors.el"
+       :rev :newest)
+  :custom
+  (terminal-colors-default-theme "gnome-terminal-tango-dark")
+  :config
+  (with-eval-after-load 'vterm
+    (require 'terminal-colors-vterm)
+    (terminal-colors-vterm-mode 1))
+
+  (with-eval-after-load 'eat
+    (require 'terminal-colors-eat)
+    (terminal-colors-eat-mode 1))
+
+  (with-eval-after-load 'term
+    (require 'terminal-colors-term)
+    (terminal-colors-term-mode 1)))
+```
+
+### Alternative: use-package and straight (Emacs version < 30)
 
 To install *terminal-colors* with `straight.el`:
 
@@ -59,31 +83,7 @@ Step 2: Add the following code to the Emacs init file:
     (terminal-colors-term-mode 1)))
 ```
 
-### Alternative installation: use-package and :vc (Built-in feature in Emacs version >= 30)
-
-To install *terminal-colors* with `use-package` and `:vc` (Emacs >= 30):
-
-```emacs-lisp
-(use-package terminal-colors
-  :vc (:url "https://github.com/jamescherti/terminal-colors.el"
-       :rev :newest)
-  :custom
-  (terminal-colors-default-theme "gnome-terminal-tango-dark")
-  :config
-  (with-eval-after-load 'vterm
-    (require 'terminal-colors-vterm)
-    (terminal-colors-vterm-mode 1))
-
-  (with-eval-after-load 'eat
-    (require 'terminal-colors-eat)
-    (terminal-colors-eat-mode 1))
-
-  (with-eval-after-load 'term
-    (require 'terminal-colors-term)
-    (terminal-colors-term-mode 1)))
-```
-
-### Alternative installation: Doom Emacs
+### Alternative: Doom Emacs
 
 To install *terminal-colors* on Doom Emacs:
 
