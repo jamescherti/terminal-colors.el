@@ -39,6 +39,16 @@ To install *terminal-colors* with `use-package` and `:vc` (Emacs >= 30):
   :vc (:url "https://github.com/jamescherti/terminal-colors.el"
        :rev :newest)
   :custom
+  ;; Builtin themes:
+  ;;   gnome-terminal-tango-dark (default)
+  ;;   gnome-terminal-tango-light
+  ;;   konsole-white-on-black
+  ;;   terminator-tango
+  ;;   terminator-rxvt
+  ;;   terminator-ambience
+  ;;   terminator-solarized
+  ;;   terminator-gruvbox-dark
+  ;;   terminator-gruvbox-light
   (terminal-colors-default-theme "gnome-terminal-tango-dark")
   :config
   (with-eval-after-load 'vterm
@@ -68,6 +78,16 @@ Step 2: Add the following code to the Emacs init file:
              :host github
              :repo "jamescherti/terminal-colors.el")
   :custom
+  ;; Builtin themes:
+  ;;   gnome-terminal-tango-dark (default)
+  ;;   gnome-terminal-tango-light
+  ;;   konsole-white-on-black
+  ;;   terminator-tango
+  ;;   terminator-rxvt
+  ;;   terminator-ambience
+  ;;   terminator-solarized
+  ;;   terminator-gruvbox-dark
+  ;;   terminator-gruvbox-light
   (terminal-colors-default-theme "gnome-terminal-tango-dark")
   :config
   (with-eval-after-load 'vterm
@@ -98,6 +118,16 @@ To install *terminal-colors* on Doom Emacs:
 2. Add to `~/.doom.d/config.el`:
 ```elisp
 (after! terminal-colors
+  ;; Builtin themes:
+  ;;   gnome-terminal-tango-dark (default)
+  ;;   gnome-terminal-tango-light
+  ;;   konsole-white-on-black
+  ;;   terminator-tango
+  ;;   terminator-rxvt
+  ;;   terminator-ambience
+  ;;   terminator-solarized
+  ;;   terminator-gruvbox-dark
+  ;;   terminator-gruvbox-light
   (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
 
   (with-eval-after-load 'vterm
@@ -158,7 +188,7 @@ Or load a theme programmatically in Elisp:
 (terminal-colors-load "terminator-solarized")
 ```
 
-### Built-in Themes
+### Built-in terminal-colors themes
 
 The following terminal themes are included out of the box:
 
