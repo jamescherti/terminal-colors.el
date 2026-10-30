@@ -1,9 +1,9 @@
-;;; terminal-colors-eat.el --- Terminal Themes for eat -*- lexical-binding: t -*-
+;;; terminal-colors-eat.el --- Terminal color schemes for Eat -*- lexical-binding: t -*-
 
 ;; Author: James Cherti
 ;; URL: https://github.com/jamescherti/terminal-colors.el
 ;; Package-Requires: ((emacs "29.1"))
-;; Keywords: maint
+;; Keywords: faces terminals
 ;; Version: 0.0.9
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -21,7 +21,12 @@
 ;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; Terminal Themes for eat
+;; This library integrates `terminal-colors' with the Eat terminal emulator.
+;;
+;; Enable `terminal-colors-eat-mode' to apply unified terminal color schemes
+;; to all `eat-mode' buffers:
+;;
+;;   (terminal-colors-eat-mode 1)
 
 ;;; Code:
 
@@ -29,8 +34,8 @@
 (require 'eat nil t)
 
 (defgroup terminal-colors-eat nil
-  "Non-nil if terminal-colors-eat mode mode is enabled."
-  :group 'terminal-colors-eat)
+  "Terminal color schemes for Eat."
+  :group 'terminal-colors)
 
 (defun terminal-colors-eat--set-foreground-background ()
   "Set the terminal theme foreground and background color."
@@ -39,11 +44,18 @@
 
 (defun terminal-colors-eat--reset ()
   "Reset eat terminal theme."
-  t)
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (and (derived-mode-p 'eat-mode)
+                 terminal-colors--remap-cookies)
+        (mapc #'face-remap-remove-relative terminal-colors--remap-cookies)
+        (setq terminal-colors--remap-cookies nil)))))
 
 (defun terminal-colors-eat--apply ()
   "Apply eat terminal theme."
-  (terminal-colors-eat--set-foreground-background)
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (terminal-colors-eat--set-foreground-background)))
 
   (face-spec-set 'eat-term-color-0
                  `((t (:foreground ,terminal-colors--color-black
@@ -184,6 +196,8 @@
         (add-hook 'terminal-colors--after-load-hook
                   #'terminal-colors-eat--apply)
         (add-hook 'terminal-colors--reset-hook #'terminal-colors-eat--reset)
+        (add-hook 'eat-mode-hook
+                  #'terminal-colors-eat--set-foreground-background)
         ;; (add-hook 'window-configuration-change-hook
         ;;           #'terminal-colors-eat--set-foreground-background)
         (terminal-colors--init))
@@ -191,9 +205,11 @@
                  #'terminal-colors-eat--apply)
     (remove-hook 'terminal-colors--reset-hook
                  #'terminal-colors-eat--reset)
+    (remove-hook 'eat-mode-hook
+                 #'terminal-colors-eat--set-foreground-background)
     ;; (remove-hook 'window-configuration-change-hook
     ;;              #'terminal-colors-eat--set-foreground-background)
-    ))
+    (terminal-colors-eat--reset)))
 
 (provide 'terminal-colors-eat)
 
