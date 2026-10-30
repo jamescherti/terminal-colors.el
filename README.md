@@ -6,7 +6,7 @@
 - Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
 - License: GPL 3.0 or later
 
-The **[terminal-colors.el](https://github.com/jamescherti/terminal-colors.el)** package applies unified terminal color schemes across Emacs terminal emulators, including `vterm`, `eat`, and `term` (`ansi-term`).
+The **[terminal-colors](https://github.com/jamescherti/terminal-colors.el)** package applies terminal themes (color schemes) to Emacs terminal emulators, including `vterm`, `eat`, and `term` (`ansi-term`).
 
 By default, Emacs terminal emulators inherit their ANSI colors and background from the active Emacs theme, which can result in low contrast or unreadable text in terminal applications. The **terminal-colors** package decouples terminal colors from the global Emacs theme, applying dedicated palettes and buffer-local foreground and background colors modeled after standalone terminal emulators.
 
