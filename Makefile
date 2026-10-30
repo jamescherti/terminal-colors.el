@@ -41,7 +41,7 @@ cask: $(CASK_DIR)
 .PHONY: compile
 compile: cask
 	cask exec emacs -Q --batch -L . \
-		--eval "(setq byte-compile-error-on-warn t)" \
+		--eval "(setq byte-compile-error-on-warn t vterm-always-compile-module t)" \
 		-f batch-byte-compile $$(cask files); \
 		(ret=$$? ; cask clean-elc && exit $$ret)
 
