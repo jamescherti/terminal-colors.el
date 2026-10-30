@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2024-2026 James Cherti | https://www.jamescherti.com/contact/
 
-;; Author: James Cherti
+;; Author: James Cherti <https://www.jamescherti.com/contact/>
 ;; URL: https://github.com/jamescherti/terminal-colors.el
 ;; Package-Requires: ((emacs "29.1") (vterm "0.0.2"))
 ;; Keywords: faces terminals

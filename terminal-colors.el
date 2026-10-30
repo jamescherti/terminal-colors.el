@@ -1,11 +1,11 @@
-;;; terminal-colors.el --- Terminal Themes -*- lexical-binding: t -*-
+;;; terminal-colors.el --- Unified color schemes for vterm, Eat, and term -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2024-2026 James Cherti | https://www.jamescherti.com/contact/
 
-;; Author: James Cherti
+;; Author: James Cherti <https://www.jamescherti.com/contact/>
 ;; URL: https://github.com/jamescherti/terminal-colors.el
 ;; Package-Requires: ((emacs "29.1"))
-;; Keywords: maint
+;; Keywords: faces terminals
 ;; Version: 0.0.9
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -23,6 +23,22 @@
 ;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
+;; The `terminal-colors' package provides unified color schemes for Emacs
+;; terminal emulators, including `vterm', `eat', and `term' (`ansi-term').
+;;
+;; It decouples terminal buffer colors from the active Emacs color theme,
+;; allowing terminal buffers to use dedicated 16-color ANSI palettes and
+;; buffer-local foreground/background colors modeled after standalone
+;; terminal emulators such as GNOME Terminal, Konsole, and Terminator.
+;;
+;; Usage:
+;;   (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
+;;   (terminal-colors-vterm-mode 1)
+;;   (terminal-colors-eat-mode 1)
+;;   (terminal-colors-term-mode 1)
+;;
+;; You can also switch themes interactively at any time using:
+;;   M-x terminal-colors-load
 
 ;;; Code:
 
@@ -34,8 +50,8 @@
 ;;; Variables
 
 (defgroup terminal-colors nil
-  "Non-nil if terminal-colors mode mode is enabled."
-  :group 'terminal-colors)
+  "Unified color schemes for terminal emulators."
+  :group 'faces)
 
 (defcustom terminal-colors-default-theme "gnome-terminal-tango-dark"
   "The default theme."
@@ -210,7 +226,7 @@
                                            ("bright-magenta" . "#ad7fa8")
                                            ("bright-cyan" . "#34e2e2")
                                            ("bright-white" . "#eeeeec")))))
-    ("terminator-solarized" . (("default-colors" . "white-on-black")
+    ("terminator-solarized" . (("default-colors" . "terminator-solarized-dark")
                                ("colors" . (("black" . "#073642")
                                             ("red" . "#dc322f")
                                             ("green" . "#859900")
@@ -227,7 +243,7 @@
                                             ("bright-magenta" . "#6c71c4")
                                             ("bright-cyan" . "#93a1a1")
                                             ("bright-white" . "#fdf6e3")))))
-    ("terminator-gruvbox-light" . (("default-colors" . "white-on-black")
+    ("terminator-gruvbox-light" . (("default-colors" . "terminator-gruvbox-light")
                                    ("colors" . (("black" . "#fbf1c7")
                                                 ("red" . "#cc241d")
                                                 ("green" . "#98971a")
@@ -244,7 +260,7 @@
                                                 ("bright-magenta" . "#8f3f71")
                                                 ("bright-cyan" . "#427b58")
                                                 ("bright-white" . "#3c3836")))))
-    ("terminator-gruvbox-dark" . (("default-colors" . "white-on-black")
+    ("terminator-gruvbox-dark" . (("default-colors" . "terminator-gruvbox-dark")
                                   ("colors" . (("black" . "#282828")
                                                ("red" . "#cc241d")
                                                ("green" . "#98971a")
@@ -430,10 +446,12 @@
                       :background terminal-colors--color-bright-white))
 
 (defun terminal-colors--reset ()
-  "Reset color their default values."
-  (when terminal-colors--remap-cookies
-    (mapc #'face-remap-remove-relative terminal-colors--remap-cookies)
-    (setq terminal-colors--remap-cookies nil))
+  "Reset colors to their default values."
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when terminal-colors--remap-cookies
+        (mapc #'face-remap-remove-relative terminal-colors--remap-cookies)
+        (setq terminal-colors--remap-cookies nil))))
   (run-hooks 'terminal-colors--reset-hook))
 
 (defun terminal-colors--load-default-default-fg-bg (default-fg-bg)
@@ -456,8 +474,7 @@ DEFAULT-FG-BG is the name of an item in
       (setq terminal-colors--cursor (or cursor fg)))))
 
 (defun terminal-colors--set-foreground-background (&rest _)
-  "Update the frame's bg, fg, and cursor colors.
-ARGS is ignored."
+  "Update the buffer's background, foreground, and fringe colors."
   (when terminal-colors--remap-cookies
     (mapc #'face-remap-remove-relative terminal-colors--remap-cookies)
     (setq terminal-colors--remap-cookies nil))
@@ -493,25 +510,28 @@ ARGS is ignored."
 
 (defun terminal-colors--reload-theme (&rest _)
   "Reload the terminal theme."
-  (terminal-colors-load terminal-colors-default-theme))
+  (terminal-colors-load (or terminal-colors--current-theme-name
+                            terminal-colors-default-theme)))
 
 (defun terminal-colors--init ()
   "Init terminal themes."
-  (unless terminal-colors--init-p
+  (if terminal-colors--init-p
+      (run-hooks 'terminal-colors--after-load-hook)
     (advice-add 'load-theme :after #'terminal-colors--reload-theme)
-    (terminal-colors--reload-theme)
-    (setq terminal-colors--init-p t))
-  (run-hooks 'terminal-colors--after-load-hook))
+    (setq terminal-colors--init-p t)
+    (terminal-colors--reload-theme)))
 
 (defun terminal-colors-get-all-theme-names ()
   "Return a list of all available theme names."
-  (mapcar 'car terminal-colors-colors))
+  (mapcar #'car terminal-colors-colors))
 
 (defun terminal-colors-load (&optional theme)
   "Load terminal theme by THEME, applying color and default settings."
   (interactive (list (completing-read "Select theme: "
-                                      (mapcar 'car terminal-colors-colors)
+                                      (mapcar #'car terminal-colors-colors)
                                       nil t)))
+  (unless theme
+    (setq theme terminal-colors-default-theme))
   (let* ((theme-data (cdr (assoc theme terminal-colors-colors)))
          (default-colors (cdr (assoc "default-colors" theme-data)))
          (color-alist (cdr (assoc "colors" theme-data))))
@@ -519,7 +539,7 @@ ARGS is ignored."
       (error "The terminal theme %s was not found" theme))
     (unless default-colors
       (error "The terminal theme default fg and bg %s was not found"
-             default-colors))
+             theme))
     (when default-colors
       (terminal-colors--load-default-default-fg-bg default-colors))
     (mapc (lambda (color-pair)
