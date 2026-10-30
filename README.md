@@ -10,6 +10,16 @@ The **[terminal-colors.el](https://github.com/jamescherti/terminal-colors.el)** 
 
 By default, Emacs terminal emulators inherit their ANSI colors and background from the active Emacs theme, which can result in low contrast or unreadable text in terminal applications. The **terminal-colors** package decouples terminal colors from the global Emacs theme, applying dedicated palettes and buffer-local foreground and background colors modeled after standalone terminal emulators.
 
+## Why?
+
+You spend hours picking an Emacs color theme that makes your source code and Org buffers look great. Then you open `vterm` or `eat` to run `htop`, `git diff`, or a test runner, and the output is nearly illegible: dark blue directory names vanish into a dark background, bright yellow warnings wash out against a light theme, and TUI applications render harsh black blocks right over your carefully chosen background color.
+
+Meanwhile, if you open a standalone terminal emulator like GNOME Terminal, Konsole, or Terminator, everything is crisp and readable right out of the box.
+
+Because Emacs terminal emulators inherit their ANSI colors and default background directly from your active Emacs theme, switching to a new theme for your code often breaks the contrast in your terminal buffers.
+
+The **terminal-colors** package solves this by decoupling your terminal buffers from your global Emacs theme. It brings battle-tested color palettes from standalone terminals (such as GNOME Terminal Tango, Konsole, Solarized, and Gruvbox) directly into `vterm`, `eat`, and `term` (`ansi-term`). Your editing buffers keep your favorite Emacs theme, while your terminal buffers get a dedicated, high-contrast color scheme with buffer-local foreground and background colors.
+
 ## Features
 
 - Unified 16-color ANSI palettes and buffer-local foreground/background colors across `vterm`, `eat`, and `term`.
