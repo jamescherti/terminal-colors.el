@@ -3,7 +3,7 @@
 (source melpa)
 
 (package-file "terminal-colors.el")
-(files "*.el")
+(files "terminal-colors*.el")
 
 (development
  (depends-on "package-lint")
