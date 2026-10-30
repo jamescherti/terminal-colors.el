@@ -23,22 +23,32 @@
 ;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; The `terminal-colors' package provides unified color schemes for Emacs
-;; terminal emulators, including `vterm', `eat', and `term' (`ansi-term').
+;; The `terminal-colors' package applies terminal themes (color schemes) to
+;; Emacs terminal emulators, including `vterm', `eat', and `term' (`ansi-term').
 ;;
-;; It decouples terminal buffer colors from the active Emacs color theme,
-;; allowing terminal buffers to use dedicated 16-color ANSI palettes and
-;; buffer-local foreground/background colors modeled after standalone
-;; terminal emulators such as GNOME Terminal, Konsole, and Terminator.
+;; By default, Emacs terminal emulators inherit their ANSI colors and background
+;; from the active Emacs theme, which can result in low contrast or unreadable
+;; text in terminal applications. The `terminal-colors' package decouples
+;; terminal colors from the global Emacs theme, applying dedicated palettes and
+;; buffer-local foreground and background colors modeled after standalone
+;; terminal emulators.
 ;;
-;; Usage:
-;;   (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
-;;   (terminal-colors-vterm-mode 1)
-;;   (terminal-colors-eat-mode 1)
-;;   (terminal-colors-term-mode 1)
+;; The `terminal-colors' theme shown in the screenshot is:
+;; 'gnome-terminal-tango-dark'.
 ;;
-;; You can also switch themes interactively at any time using:
-;;   M-x terminal-colors-load
+;; Features
+;; --------
+;;
+;; - Unified 16-color ANSI palettes and buffer-local foreground/background
+;;   colors across vterm, eat, and term.
+;; - Built-in palettes from popular terminal emulators, including GNOME
+;;   Terminal, Konsole, and Terminator.
+;; - Buffer-local face remapping for the default and fringe faces in terminal
+;;   buffers without affecting standard editing buffers.
+;; - Automatic reapplication of the active terminal palette when switching Emacs
+;;   color themes via `load-theme'.
+;; - Interactive palette switching with live redrawing of open terminal buffers
+;;   via M-x terminal-colors-load.
 
 ;;; Code:
 
@@ -757,11 +767,11 @@ ARGS are the arguments passed to ORIG-FUN."
       (setq terminal-colors-eat--saved-faces
             (terminal-colors--save-faces
              '(eat-term-color-0 eat-term-color-1 eat-term-color-2
-               eat-term-color-3 eat-term-color-4 eat-term-color-5
-               eat-term-color-6 eat-term-color-7 eat-term-color-8
-               eat-term-color-9 eat-term-color-10 eat-term-color-11
-               eat-term-color-12 eat-term-color-13 eat-term-color-14
-               eat-term-color-15))))
+                                eat-term-color-3 eat-term-color-4 eat-term-color-5
+                                eat-term-color-6 eat-term-color-7 eat-term-color-8
+                                eat-term-color-9 eat-term-color-10 eat-term-color-11
+                                eat-term-color-12 eat-term-color-13 eat-term-color-14
+                                eat-term-color-15))))
     (face-spec-set 'eat-term-color-0
                    `((t (:foreground ,terminal-colors--color-black
                                      :background ,terminal-colors--color-black))))
@@ -894,31 +904,31 @@ ARGS are the arguments passed to ORIG-FUN."
       (setq terminal-colors-term--saved-faces
             (terminal-colors--save-faces
              '(term term-color-black term-color-red term-color-green
-               term-color-yellow term-color-blue term-color-magenta
-               term-color-cyan term-color-white term-color-bright-black
-               term-color-bright-red term-color-bright-green
-               term-color-bright-yellow term-color-bright-blue
-               term-color-bright-magenta term-color-bright-cyan
-               term-color-bright-white))))
+                    term-color-yellow term-color-blue term-color-magenta
+                    term-color-cyan term-color-white term-color-bright-black
+                    term-color-bright-red term-color-bright-green
+                    term-color-bright-yellow term-color-bright-blue
+                    term-color-bright-magenta term-color-bright-cyan
+                    term-color-bright-white))))
     (when (eq terminal-colors-term--backup-color-vector 'unset)
       (setq terminal-colors-term--backup-color-vector (default-value 'ansi-term-color-vector)))
 
     (set-default 'ansi-term-color-vector [term terminal-colors-term-color-black
-                                       terminal-colors-term-color-red
-                                       terminal-colors-term-color-green
-                                       terminal-colors-term-color-yellow
-                                       terminal-colors-term-color-blue
-                                       terminal-colors-term-color-magenta
-                                       terminal-colors-term-color-cyan
-                                       terminal-colors-term-color-white
-                                       terminal-colors-term-color-bright-black
-                                       terminal-colors-term-color-bright-red
-                                       terminal-colors-term-color-bright-green
-                                       terminal-colors-term-color-bright-yellow
-                                       terminal-colors-term-color-bright-blue
-                                       terminal-colors-term-color-bright-magenta
-                                       terminal-colors-term-color-bright-cyan
-                                       terminal-colors-term-color-bright-white])
+                                               terminal-colors-term-color-red
+                                               terminal-colors-term-color-green
+                                               terminal-colors-term-color-yellow
+                                               terminal-colors-term-color-blue
+                                               terminal-colors-term-color-magenta
+                                               terminal-colors-term-color-cyan
+                                               terminal-colors-term-color-white
+                                               terminal-colors-term-color-bright-black
+                                               terminal-colors-term-color-bright-red
+                                               terminal-colors-term-color-bright-green
+                                               terminal-colors-term-color-bright-yellow
+                                               terminal-colors-term-color-bright-blue
+                                               terminal-colors-term-color-bright-magenta
+                                               terminal-colors-term-color-bright-cyan
+                                               terminal-colors-term-color-bright-white])
 
     ;; term
     (set-face-attribute 'term nil
@@ -989,9 +999,9 @@ ARGS are the arguments passed to ORIG-FUN."
                         :foreground terminal-colors--color-bright-white
                         :background terminal-colors--color-bright-white))
 
-    (dolist (buf (buffer-list))
-      (with-current-buffer buf
-        (terminal-colors-term--set-foreground-background))))
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (terminal-colors-term--set-foreground-background))))
 
 ;;;###autoload
 (define-minor-mode terminal-colors-term-mode
@@ -1043,12 +1053,12 @@ ARGS are the arguments passed to ORIG-FUN."
       (setq terminal-colors-vterm--saved-faces
             (terminal-colors--save-faces
              '(vterm-color-black vterm-color-red vterm-color-green
-               vterm-color-yellow vterm-color-blue vterm-color-magenta
-               vterm-color-cyan vterm-color-white vterm-color-bright-black
-               vterm-color-bright-red vterm-color-bright-green
-               vterm-color-bright-yellow vterm-color-bright-blue
-               vterm-color-bright-magenta vterm-color-bright-cyan
-               vterm-color-bright-white))))
+                                 vterm-color-yellow vterm-color-blue vterm-color-magenta
+                                 vterm-color-cyan vterm-color-white vterm-color-bright-black
+                                 vterm-color-bright-red vterm-color-bright-green
+                                 vterm-color-bright-yellow vterm-color-bright-blue
+                                 vterm-color-bright-magenta vterm-color-bright-cyan
+                                 vterm-color-bright-white))))
     (set-face-attribute 'vterm-color-black nil
                         :foreground terminal-colors--color-black
                         :background terminal-colors--color-black)

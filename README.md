@@ -54,7 +54,7 @@ To install *terminal-colors* with `use-package` and `:vc` (Emacs >= 30):
   ;;   terminator-solarized
   ;;   terminator-gruvbox-dark
   ;;   terminator-gruvbox-light
-  (terminal-colors-default-theme "gnome-terminal-tango-dark")
+  (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
   :config
   (with-eval-after-load 'vterm
     (terminal-colors-vterm-mode 1))
