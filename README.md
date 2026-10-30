@@ -52,15 +52,12 @@ To install *terminal-colors* with `use-package` and `:vc` (Emacs >= 30):
   (terminal-colors-default-theme "gnome-terminal-tango-dark")
   :config
   (with-eval-after-load 'vterm
-    (require 'terminal-colors-vterm)
     (terminal-colors-vterm-mode 1))
 
   (with-eval-after-load 'eat
-    (require 'terminal-colors-eat)
     (terminal-colors-eat-mode 1))
 
   (with-eval-after-load 'term
-    (require 'terminal-colors-term)
     (terminal-colors-term-mode 1)))
 ```
 
@@ -91,15 +88,12 @@ Step 2: Add the following code to the Emacs init file:
   (terminal-colors-default-theme "gnome-terminal-tango-dark")
   :config
   (with-eval-after-load 'vterm
-    (require 'terminal-colors-vterm)
     (terminal-colors-vterm-mode 1))
 
   (with-eval-after-load 'eat
-    (require 'terminal-colors-eat)
     (terminal-colors-eat-mode 1))
 
   (with-eval-after-load 'term
-    (require 'terminal-colors-term)
     (terminal-colors-term-mode 1)))
 ```
 
@@ -131,15 +125,12 @@ To install *terminal-colors* on Doom Emacs:
   (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
 
   (with-eval-after-load 'vterm
-    (require 'terminal-colors-vterm)
     (terminal-colors-vterm-mode 1))
 
   (with-eval-after-load 'eat
-    (require 'terminal-colors-eat)
     (terminal-colors-eat-mode 1))
 
   (with-eval-after-load 'term
-    (require 'terminal-colors-term)
     (terminal-colors-term-mode 1)))
 ```
 
@@ -156,15 +147,12 @@ Enable the global minor mode corresponding to each terminal emulator you use:
 
 ```emacs-lisp
 ;; For vterm
-(require 'terminal-colors-vterm)
 (terminal-colors-vterm-mode 1)
 
 ;; For Eat
-(require 'terminal-colors-eat)
 (terminal-colors-eat-mode 1)
 
 ;; For built-in term / ansi-term
-(require 'terminal-colors-term)
 (terminal-colors-term-mode 1)
 ```
 
