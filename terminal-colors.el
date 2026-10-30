@@ -1158,7 +1158,7 @@ Preserve indexed colors and explicit underline and `inverse-video' colors."
       (condition-case err
           (progn
             (require 'vterm)
-            (if (fboundp 'terminal-colors-eat--process-output)
+            (if (fboundp 'terminal-colors-vterm--get-color-override)
                 (advice-add 'vterm--get-color :around #'terminal-colors-vterm--get-color-override)
               (message "[terminal-colors] Warning: terminal-colors-vterm--get-color-override"))
             (add-hook 'terminal-colors--after-load-hook
