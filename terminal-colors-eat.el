@@ -4,7 +4,7 @@
 
 ;; Author: James Cherti <https://www.jamescherti.com/contact/>
 ;; URL: https://github.com/jamescherti/terminal-colors.el
-;; Package-Requires: ((emacs "29.1") (eat "0.9.4"))
+;; Package-Requires: ((emacs "29.1") (terminal-colors "0.0.9") (eat "0.9.4"))
 ;; Keywords: faces terminals
 ;; Version: 0.0.9
 ;; SPDX-License-Identifier: GPL-3.0-or-later

@@ -22,15 +22,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - uses: jamescherti/setup-emacs@master
+        with:
+          version: '29.4'
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          sudo apt-get install emacs && emacs --version
+          sudo apt-get update
+          sudo apt-get install -y cmake libtool-bin libvterm-dev
           git clone https://github.com/riscy/melpazoid.git ~/melpazoid
           pip install ~/melpazoid
           cat ~/melpazoid/melpazoid/melpazoid.el
@@ -38,5 +42,5 @@ jobs:
         env:
           LOCAL_REPO: "${{ github.workspace }}"
           RECIPE: (terminal-colors :fetcher github :repo "jamescherti/terminal-colors.el" :branch "${{ github.ref_name }}")
-          EXIST_OK: false
+          EXIST_OK: 'false'
         run: echo $GITHUB_REF && make -C ~/melpazoid
