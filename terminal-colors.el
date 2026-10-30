@@ -1043,38 +1043,39 @@ DEFAULT-FG-BG is the name of an item in
                         :background terminal-colors--color-bright-white)))
 
 (defun terminal-colors-vterm--get-color-override (orig-fun index &rest args)
-  "Override `vterm--get-color' to use `terminal-colors' variables.
+  "Return the terminal default color or call ORIG-FUN with INDEX and ARGS.
+Preserve indexed colors and explicit underline and inverse-video colors."
+  (if (and (bound-and-true-p terminal-colors-vterm-mode)
+           (not (eq terminal-colors-vterm--backup-color-palette 'unset))
+           (derived-mode-p 'vterm-mode)
+           (= index -1))
+      (let* ((foreground (memq :foreground args))
+             (attribute (if foreground :foreground :background))
+             (face (cond
+                    ((and foreground (memq :underline args))
+                     'vterm-color-underline)
+                    ((and (not foreground) (memq :inverse-video args))
+                     'vterm-color-inverse-video)))
+             (color (and face (face-attribute face attribute nil nil)))
+             (inherit (and face (face-attribute face :inherit nil nil)))
+             (default-color (if foreground
+                                terminal-colors--foreground
+                              terminal-colors--background)))
+        (if (and default-color
+                 (or (null color) (eq color 'unspecified))
+                 (member inherit '(nil unspecified default (default))))
+            default-color
+          (apply orig-fun index args)))
+    (apply orig-fun index args)))
 
-ORIG-FUN is the original color function being advised.
-INDEX is the terminal color index (e.g., -1 for default, 0 for black).
-ARGS are additional property keywords like :foreground or :inverse-video."
-  (let ((is-foreground (member :foreground args))
-        (is-inverse (member :inverse-video args)))
-    (cond
-     ;; 1. Intercept default/black background when `terminal-colors-vterm-mode' is active.
-     ((and (bound-and-true-p terminal-colors-vterm-mode)
-           (not is-foreground)
-           (not is-inverse)
-           (or (= index -1) (= index 0))
-           (bound-and-true-p terminal-colors--background))
-      terminal-colors--background)
-
-     ;; 2. Intercept default foreground text color when `terminal-colors-vterm-mode' is active.
-     ((and (bound-and-true-p terminal-colors-vterm-mode)
-           is-foreground
-           (not is-inverse)
-           (not (and (memq :underline args)
-                     (facep 'vterm-color-underline)
-                     (not (eq (face-attribute 'vterm-color-underline
-                                              :foreground nil nil)
-                              'unspecified))))
-           (= index -1)
-           (bound-and-true-p terminal-colors--foreground))
-      terminal-colors--foreground)
-
-     ;; 3. Default to original behavior for everything else.
-     (t
-      (apply orig-fun index args)))))
+(defun terminal-colors-vterm--redraw ()
+  "Redraw the current vterm buffer unless copy mode is active."
+  (when (and (derived-mode-p 'vterm-mode)
+             (not (bound-and-true-p vterm-copy-mode))
+             (bound-and-true-p vterm--term))
+    (let ((inhibit-read-only t)
+          (inhibit-redisplay t))
+      (vterm--redraw vterm--term))))
 
 (defun terminal-colors-vterm--reset ()
   "Reset the Terminal Theme."
@@ -1091,9 +1092,7 @@ ARGS are additional property keywords like :foreground or :inverse-video."
     (setq terminal-colors-vterm--backup-color-palette 'unset))
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
-      (when (and (derived-mode-p 'vterm-mode)
-                 (bound-and-true-p vterm--term))
-        (vterm--redraw vterm--term)))))
+      (terminal-colors-vterm--redraw))))
 
 (defun terminal-colors-vterm--apply ()
   "Apply the Terminal Theme and refresh visible vterm buffers."
@@ -1104,28 +1103,26 @@ ARGS are additional property keywords like :foreground or :inverse-video."
              (eq terminal-colors-vterm--backup-color-palette 'unset))
     (setq terminal-colors-vterm--backup-color-palette (default-value 'vterm-color-palette))
     (set-default 'vterm-color-palette [terminal-colors-term-color-black
-                               terminal-colors-term-color-red
-                               terminal-colors-term-color-green
-                               terminal-colors-term-color-yellow
-                               terminal-colors-term-color-blue
-                               terminal-colors-term-color-magenta
-                               terminal-colors-term-color-cyan
-                               terminal-colors-term-color-white
-                               terminal-colors-term-color-bright-black
-                               terminal-colors-term-color-bright-red
-                               terminal-colors-term-color-bright-green
-                               terminal-colors-term-color-bright-yellow
-                               terminal-colors-term-color-bright-blue
-                               terminal-colors-term-color-bright-magenta
-                               terminal-colors-term-color-bright-cyan
-                               terminal-colors-term-color-bright-white]))
+                                       terminal-colors-term-color-red
+                                       terminal-colors-term-color-green
+                                       terminal-colors-term-color-yellow
+                                       terminal-colors-term-color-blue
+                                       terminal-colors-term-color-magenta
+                                       terminal-colors-term-color-cyan
+                                       terminal-colors-term-color-white
+                                       terminal-colors-term-color-bright-black
+                                       terminal-colors-term-color-bright-red
+                                       terminal-colors-term-color-bright-green
+                                       terminal-colors-term-color-bright-yellow
+                                       terminal-colors-term-color-bright-blue
+                                       terminal-colors-term-color-bright-magenta
+                                       terminal-colors-term-color-bright-cyan
+                                       terminal-colors-term-color-bright-white]))
   (terminal-colors-vterm--set-face-attribute)
   ;; Force active vterm buffers to redraw to display the new theme immediately
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
-      (when (and (derived-mode-p 'vterm-mode)
-                 (bound-and-true-p vterm--term))
-        (vterm--redraw vterm--term)))))
+      (terminal-colors-vterm--redraw))))
 
 ;;;###autoload
 (define-minor-mode terminal-colors-vterm-mode
