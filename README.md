@@ -6,9 +6,9 @@
 - Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
 - License: GPL 3.0 or later
 
-Is your favorite theme causing washed-out colors, poor contrast, and hard-to-read output in your Emacs terminal?
+Is your favorite theme causing your Emacs terminal to have washed-out colors, poor contrast, and hard-to-read output?
 
-The **[terminal-colors](https://github.com/jamescherti/terminal-colors.el)** gives Emacs terminals a fresh look with dedicated terminal color schemes for vterm, eat, and term (ansi-term). Keep your favorite Emacs theme while giving the Emacs terminal its own colors, similar to those of standalone terminals like `gnome-terminal`.
+The **[terminal-colors](https://github.com/jamescherti/terminal-colors.el)** gives Emacs terminals a fresh look with dedicated terminal color schemes for vterm, eat, and term (ansi-term). It allows keeping your favorite Emacs theme while giving the Emacs terminal its own colors, similar to those of standalone terminals like `gnome-terminal`.
 
 By default, Emacs terminal emulators inherit their ANSI colors and background from the active Emacs theme, which can result in low contrast or unreadable text in terminal applications. The **terminal-colors** package decouples terminal colors from the global Emacs theme, applying dedicated palettes and buffer-local foreground and background colors modeled after standalone terminal emulators.
 
