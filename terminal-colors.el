@@ -408,14 +408,6 @@
   :type 'boolean
   :group 'terminal-colors-vterm)
 
-;; (when terminal-colors-frame-color-vterm-update-frame-color
-;;    (terminal-colors-frame-color--save-theme-fg-bg)
-;;    (add-hook 'window-configuration-change-hook
-;;              #'terminal-colors-frame-color--auto-change)
-;;
-;;    (add-hook 'terminal-colors--after-load-hook
-;;              #'terminal-colors-frame-color--save-theme-fg-bg))
-
 (defun terminal-colors-frame-color--auto-change (&rest _)
   "Update the frame's bg and fg colors based on the buffer's major mode."
   ;; TODO standardize detecting the major mode using a list
@@ -782,8 +774,6 @@ DEFAULT-FG-BG is the name of an item in
             (add-hook 'terminal-colors--reset-hook #'terminal-colors-eat--reset)
             (add-hook 'eat-mode-hook
                       #'terminal-colors-eat--set-foreground-background)
-            ;; (add-hook 'window-configuration-change-hook
-            ;;           #'terminal-colors-eat--set-foreground-background)
             (terminal-colors--init))
         (error
          (terminal-colors-eat-mode -1)
@@ -794,8 +784,6 @@ DEFAULT-FG-BG is the name of an item in
                  #'terminal-colors-eat--reset)
     (remove-hook 'eat-mode-hook
                  #'terminal-colors-eat--set-foreground-background)
-    ;; (remove-hook 'window-configuration-change-hook
-    ;;              #'terminal-colors-eat--set-foreground-background)
     (terminal-colors-eat--reset)
     (terminal-colors--maybe-uninit)))
 
@@ -948,8 +936,6 @@ DEFAULT-FG-BG is the name of an item in
                       #'terminal-colors-term--reset)
             (add-hook 'term-mode-hook
                       #'terminal-colors-term--set-foreground-background)
-            ;; (add-hook 'window-configuration-change-hook
-            ;;           #'terminal-colors-term--set-foreground-background)
             (terminal-colors--init))
         (error
          (terminal-colors-term-mode -1)
@@ -961,8 +947,6 @@ DEFAULT-FG-BG is the name of an item in
                  #'terminal-colors-term--reset)
     (remove-hook 'term-mode-hook
                  #'terminal-colors-term--set-foreground-background)
-    ;; (remove-hook 'window-configuration-change-hook
-    ;;              #'terminal-colors-term--set-foreground-background)
     (terminal-colors-term--reset)
     (terminal-colors--maybe-uninit)))
 
@@ -1141,8 +1125,6 @@ Preserve indexed colors and explicit underline and inverse-video colors."
                       #'terminal-colors-vterm--reset)
             (add-hook 'vterm-mode-hook
                       #'terminal-colors-vterm--set-foreground-background)
-            ;; (add-hook 'window-configuration-change-hook
-            ;;           #'terminal-colors-vterm--set-foreground-background)
             (terminal-colors--init))
         (error
          (terminal-colors-vterm-mode -1)
@@ -1155,9 +1137,6 @@ Preserve indexed colors and explicit underline and inverse-video colors."
                  #'terminal-colors-vterm--reset)
     (remove-hook 'vterm-mode-hook
                  #'terminal-colors-vterm--set-foreground-background)
-    ;; (remove-hook 'window-configuration-change-hook
-    ;;              #'terminal-colors-vterm--set-foreground-background)
-
     (terminal-colors-vterm--reset)
     (terminal-colors--maybe-uninit)))
 
