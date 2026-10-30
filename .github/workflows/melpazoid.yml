@@ -37,7 +37,6 @@ jobs:
       - name: Run
         env:
           LOCAL_REPO: "${{ github.workspace }}"
-          RECIPE: (terminal-colors :fetcher github :repo "jamescherti/terminal-colors.el" :branch "${{ github.ref_name }}" :files ("terminal-colors.el"))
-          # Set EXIST_OK to false (or remove it) if the package isn't on MELPA
-          EXIST_OK: true
+          RECIPE: (terminal-colors :fetcher github :repo "jamescherti/terminal-colors.el" :branch "${{ github.ref_name }}"
+          EXIST_OK: false
         run: echo $GITHUB_REF && make -C ~/melpazoid

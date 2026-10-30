@@ -33,7 +33,7 @@
 ;;; Code:
 
 (require 'terminal-colors)
-(require 'eat nil t)
+(require 'eat)
 
 (defgroup terminal-colors-eat nil
   "Terminal color schemes for Eat."

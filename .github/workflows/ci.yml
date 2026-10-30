@@ -35,9 +35,6 @@ jobs:
       fail-fast: true
       matrix:
         emacs-version:
-          - '26.3'
-          - '27.1'
-          - '28.1'
           - '29.1'
           - '29.4'
           - '30.1'

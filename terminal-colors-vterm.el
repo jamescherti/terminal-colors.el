@@ -35,7 +35,7 @@
 
 (require 'terminal-colors)
 ;; (require 'term)
-(require 'vterm nil t)
+(require 'vterm)
 (require 'terminal-colors-frame-color)
 
 (defgroup terminal-colors-vterm nil
