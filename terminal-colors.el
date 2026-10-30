@@ -1,5 +1,7 @@
 ;;; terminal-colors.el --- Terminal Themes -*- lexical-binding: t -*-
 
+;; Copyright (C) 2024-2026 James Cherti | https://www.jamescherti.com/contact/
+
 ;; Author: James Cherti
 ;; URL: https://github.com/jamescherti/terminal-colors.el
 ;; Package-Requires: ((emacs "29.1"))

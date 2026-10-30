@@ -1,9 +1,11 @@
-;;; terminal-colors-term.el --- Terminal Themes for ansi-color -*- lexical-binding: t -*-
+;;; terminal-colors-term.el --- Terminal color schemes for term and ansi-term -*- lexical-binding: t -*-
+
+;; Copyright (C) 2024-2026 James Cherti | https://www.jamescherti.com/contact/
 
 ;; Author: James Cherti
 ;; URL: https://github.com/jamescherti/terminal-colors.el
 ;; Package-Requires: ((emacs "29.1"))
-;; Keywords: maint
+;; Keywords: faces terminals
 ;; Version: 0.0.9
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -21,7 +23,13 @@
 ;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; Terminal Themes for ansi-color
+;; This library integrates `terminal-colors' with the built-in Emacs `term'
+;; and `ansi-term' terminal emulators.
+;;
+;; Enable `terminal-colors-term-mode' to apply unified terminal color schemes
+;; to all `term-mode' buffers:
+;;
+;;   (terminal-colors-term-mode 1)
 
 ;;; Code:
 
@@ -30,8 +38,8 @@
 (require 'ansi-color)
 
 (defgroup terminal-colors-term nil
-  "Non-nil if terminal-colors-term mode mode is enabled."
-  :group 'terminal-colors-term)
+  "Terminal color schemes for `term' and `ansi-term'."
+  :group 'terminal-colors)
 
 (defvar terminal-colors-term--backup-color-vector nil
   "A backup of the `ansi-term' color vector.")
@@ -42,7 +50,13 @@
     (terminal-colors--set-foreground-background)))
 
 (defun terminal-colors-term--reset ()
-  "Apply terminal theme."
+  "Reset the `term' terminal theme."
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (and (derived-mode-p 'term-mode)
+                 terminal-colors--remap-cookies)
+        (mapc #'face-remap-remove-relative terminal-colors--remap-cookies)
+        (setq terminal-colors--remap-cookies nil))))
   (when terminal-colors-term--backup-color-vector
     (setq ansi-term-color-vector terminal-colors-term--backup-color-vector)
     (setq terminal-colors-term--backup-color-vector nil)))
@@ -203,7 +217,9 @@
   ;;                     :foreground terminal-colors--color-bright-white
   ;;                     :background terminal-colors--color-bright-white)
 
-  (terminal-colors-term--set-foreground-background))
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (terminal-colors-term--set-foreground-background))))
 
 ;;;###autoload
 (define-minor-mode terminal-colors-term-mode
@@ -217,6 +233,8 @@
                   #'terminal-colors-term--apply)
         (add-hook 'terminal-colors--reset-hook
                   #'terminal-colors-term--reset)
+        (add-hook 'term-mode-hook
+                  #'terminal-colors-term--set-foreground-background)
         ;; (add-hook 'window-configuration-change-hook
         ;;           #'terminal-colors-term--set-foreground-background)
         (terminal-colors--init))
@@ -225,6 +243,8 @@
                  #'terminal-colors-term--apply)
     (remove-hook 'terminal-colors--reset-hook
                  #'terminal-colors-term--reset)
+    (remove-hook 'term-mode-hook
+                 #'terminal-colors-term--set-foreground-background)
     ;; (remove-hook 'window-configuration-change-hook
     ;;              #'terminal-colors-term--set-foreground-background)
     (terminal-colors-term--reset)))

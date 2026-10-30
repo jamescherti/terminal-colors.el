@@ -20,6 +20,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
+;; Copyright (C) 2024-2026 James Cherti | https://www.jamescherti.com/contact/
+
 ;;; Commentary:
 ;; Terminal Themes for vterm
 
