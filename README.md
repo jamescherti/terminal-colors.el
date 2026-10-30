@@ -100,7 +100,7 @@ Step 2: Add the following code to the Emacs init file:
 
 To install *terminal-colors* on Doom Emacs:
 
-1. Add to the `~/.doom.d/packages.el` file:
+Step 1: Add to the `~/.doom.d/packages.el` file:
 
 ```elisp
 (package! terminal-colors
@@ -108,7 +108,8 @@ To install *terminal-colors* on Doom Emacs:
   (:host github :repo "jamescherti/terminal-colors.el"))
 ```
 
-2. Add to `~/.doom.d/config.el`:
+Step 2: Add to `~/.doom.d/config.el`:
+
 ```elisp
 (after! terminal-colors
   ;; Builtin themes:
@@ -133,7 +134,8 @@ To install *terminal-colors* on Doom Emacs:
     (terminal-colors-term-mode 1)))
 ```
 
-3. Run the `doom sync` command:
+Step 3: Run the `doom sync` command:
+
 ```
 doom sync
 ```
