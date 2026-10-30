@@ -447,6 +447,31 @@
 
 ;;; Functions
 
+(defun terminal-colors--save-faces (faces)
+  "Return the override specs and frame attributes of FACES."
+  (mapcar
+   (lambda (face)
+     (list face (copy-tree (get face 'face-override-spec))
+           (mapcar (lambda (frame)
+                     (cons frame (face-all-attributes face frame)))
+                   (cons t (frame-list)))))
+   (delete-dups
+    (mapcar (lambda (face) (or (get face 'face-alias) face)) faces))))
+
+(defun terminal-colors--restore-faces (saved)
+  "Restore face specs and frame attributes from SAVED."
+  (dolist (entry saved)
+    (let ((face (car entry)))
+      (dolist (attribute (cdr (assq t (nth 2 entry))))
+        (set-face-attribute face t (car attribute) (cdr attribute)))
+      (face-spec-set face (cadr entry) 'face-override-spec)
+      (dolist (frame-attributes (nth 2 entry))
+        (let ((frame (car frame-attributes)))
+          (when (and (not (eq frame t)) (frame-live-p frame))
+            (dolist (attribute (cdr frame-attributes))
+              (set-face-attribute face frame
+                                  (car attribute) (cdr attribute)))))))))
+
 (defun terminal-colors--apply ()
   "Update the Terminal Themes faces."
   (set-face-attribute 'terminal-colors-term-color-black nil
@@ -581,13 +606,28 @@ DEFAULT-FG-BG is the name of an item in
   (terminal-colors-load (or terminal-colors--current-theme-name
                             terminal-colors-default-theme)))
 
+(defun terminal-colors--load-theme-around (function &rest args)
+  "Call FUNCTION with ARGS while preserving terminal theme cleanup state."
+  (terminal-colors--reset)
+  (unwind-protect
+      (apply function args)
+    (terminal-colors--reload-theme)))
+
+(defun terminal-colors--maybe-uninit ()
+  "Remove theme advice when all terminal integrations are disabled."
+  (unless (or (bound-and-true-p terminal-colors-eat-mode)
+              (bound-and-true-p terminal-colors-term-mode)
+              (bound-and-true-p terminal-colors-vterm-mode))
+    (advice-remove 'load-theme #'terminal-colors--load-theme-around)
+    (setq terminal-colors--init-p nil)))
+
 (defun terminal-colors--init ()
   "Init terminal themes."
   (if terminal-colors--init-p
       (run-hooks 'terminal-colors--after-load-hook)
-    (advice-add 'load-theme :after #'terminal-colors--reload-theme)
-    (setq terminal-colors--init-p t)
-    (terminal-colors--reload-theme)))
+    (terminal-colors--reload-theme)
+    (advice-add 'load-theme :around #'terminal-colors--load-theme-around)
+    (setq terminal-colors--init-p t)))
 
 (defun terminal-colors-get-all-theme-names ()
   "Return a list of all available theme names."
@@ -628,6 +668,9 @@ DEFAULT-FG-BG is the name of an item in
 
 ;;; Eat
 
+(defvar terminal-colors-eat--saved-faces nil
+  "Face state saved before applying terminal colors.")
+
 (defun terminal-colors-eat--set-foreground-background ()
   "Set the terminal theme foreground and background color."
   (when (derived-mode-p 'eat-mode)
@@ -635,6 +678,8 @@ DEFAULT-FG-BG is the name of an item in
 
 (defun terminal-colors-eat--reset ()
   "Reset eat terminal theme."
+  (terminal-colors--restore-faces terminal-colors-eat--saved-faces)
+  (setq terminal-colors-eat--saved-faces nil)
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (when (and (derived-mode-p 'eat-mode)
@@ -649,6 +694,21 @@ DEFAULT-FG-BG is the name of an item in
       (terminal-colors-eat--set-foreground-background)))
 
   (when (featurep 'eat)
+    (unless terminal-colors-eat--saved-faces
+      (setq terminal-colors-eat--saved-faces
+            (terminal-colors--save-faces
+             '(eat-term-color-0 eat-term-color-1 eat-term-color-2
+               eat-term-color-3 eat-term-color-4 eat-term-color-5
+               eat-term-color-6 eat-term-color-7 eat-term-color-8
+               eat-term-color-9 eat-term-color-10 eat-term-color-11
+               eat-term-color-12 eat-term-color-13 eat-term-color-14
+               eat-term-color-15 eat-term-color-black eat-term-color-red
+               eat-term-color-green eat-term-color-yellow eat-term-color-blue
+               eat-term-color-magenta eat-term-color-cyan eat-term-color-white
+               eat-term-color-bright-black eat-term-color-bright-red
+               eat-term-color-bright-green eat-term-color-bright-yellow
+               eat-term-color-bright-blue eat-term-color-bright-magenta
+               eat-term-color-bright-cyan eat-term-color-bright-white))))
     (face-spec-set 'eat-term-color-0
                    `((t (:foreground ,terminal-colors--color-black
                                      :background ,terminal-colors--color-black))))
@@ -784,18 +844,20 @@ DEFAULT-FG-BG is the name of an item in
   :lighter " TThemesEat"
   :group 'terminal-colors-eat
   (if terminal-colors-eat-mode
-      (progn
-        (require 'eat)
-        (add-hook 'terminal-colors--after-load-hook
-                  #'terminal-colors-eat--apply)
-        (add-hook 'terminal-colors--reset-hook #'terminal-colors-eat--reset)
-        (add-hook 'eat-mode-hook
-                  #'terminal-colors-eat--set-foreground-background)
-        ;; (add-hook 'window-configuration-change-hook
-        ;;           #'terminal-colors-eat--set-foreground-background)
-        (when (bound-and-true-p terminal-colors-eat-mode)
-          (terminal-colors-eat--apply))
-        (terminal-colors--init))
+      (condition-case err
+          (progn
+            (require 'eat)
+            (add-hook 'terminal-colors--after-load-hook
+                      #'terminal-colors-eat--apply)
+            (add-hook 'terminal-colors--reset-hook #'terminal-colors-eat--reset)
+            (add-hook 'eat-mode-hook
+                      #'terminal-colors-eat--set-foreground-background)
+            ;; (add-hook 'window-configuration-change-hook
+            ;;           #'terminal-colors-eat--set-foreground-background)
+            (terminal-colors--init))
+        (error
+         (terminal-colors-eat-mode -1)
+         (signal (car err) (cdr err))))
     (remove-hook 'terminal-colors--after-load-hook
                  #'terminal-colors-eat--apply)
     (remove-hook 'terminal-colors--reset-hook
@@ -804,12 +866,16 @@ DEFAULT-FG-BG is the name of an item in
                  #'terminal-colors-eat--set-foreground-background)
     ;; (remove-hook 'window-configuration-change-hook
     ;;              #'terminal-colors-eat--set-foreground-background)
-    (terminal-colors-eat--reset)))
+    (terminal-colors-eat--reset)
+    (terminal-colors--maybe-uninit)))
 
 ;;; term
 
-(defvar terminal-colors-term--backup-color-vector nil
+(defvar terminal-colors-term--backup-color-vector 'unset
   "A backup of the `ansi-term' color vector.")
+
+(defvar terminal-colors-term--saved-faces nil
+  "Face state saved before applying terminal colors.")
 
 (defun terminal-colors-term--set-foreground-background ()
   "Set the `term' foreground and background color."
@@ -818,23 +884,35 @@ DEFAULT-FG-BG is the name of an item in
 
 (defun terminal-colors-term--reset ()
   "Reset the `term' terminal theme."
+  (terminal-colors--restore-faces terminal-colors-term--saved-faces)
+  (setq terminal-colors-term--saved-faces nil)
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (when (and (derived-mode-p 'term-mode)
                  terminal-colors--remap-cookies)
         (mapc #'face-remap-remove-relative terminal-colors--remap-cookies)
         (setq terminal-colors--remap-cookies nil))))
-  (when terminal-colors-term--backup-color-vector
-    (setq ansi-term-color-vector terminal-colors-term--backup-color-vector)
-    (setq terminal-colors-term--backup-color-vector nil)))
+  (unless (eq terminal-colors-term--backup-color-vector 'unset)
+    (set-default 'ansi-term-color-vector terminal-colors-term--backup-color-vector)
+    (setq terminal-colors-term--backup-color-vector 'unset)))
 
 (defun terminal-colors-term--apply ()
   "Apply the `term' theme."
   (when (featurep 'term)
-    (unless terminal-colors-term--backup-color-vector
-      (setq terminal-colors-term--backup-color-vector ansi-term-color-vector))
+    (unless terminal-colors-term--saved-faces
+      (setq terminal-colors-term--saved-faces
+            (terminal-colors--save-faces
+             '(term term-color-black term-color-red term-color-green
+               term-color-yellow term-color-blue term-color-magenta
+               term-color-cyan term-color-white term-color-bright-black
+               term-color-bright-red term-color-bright-green
+               term-color-bright-yellow term-color-bright-blue
+               term-color-bright-magenta term-color-bright-cyan
+               term-color-bright-white))))
+    (when (eq terminal-colors-term--backup-color-vector 'unset)
+      (setq terminal-colors-term--backup-color-vector (default-value 'ansi-term-color-vector)))
 
-    (setq ansi-term-color-vector [term terminal-colors-term-color-black
+    (set-default 'ansi-term-color-vector [term terminal-colors-term-color-black
                                        terminal-colors-term-color-red
                                        terminal-colors-term-color-green
                                        terminal-colors-term-color-yellow
@@ -996,17 +1074,21 @@ DEFAULT-FG-BG is the name of an item in
   :lighter " TThemesAnsi-Color"
   :group 'terminal-colors-term
   (if terminal-colors-term-mode
-      (progn
-        (require 'term)
-        (add-hook 'terminal-colors--after-load-hook
-                  #'terminal-colors-term--apply)
-        (add-hook 'terminal-colors--reset-hook
-                  #'terminal-colors-term--reset)
-        (add-hook 'term-mode-hook
-                  #'terminal-colors-term--set-foreground-background)
-        ;; (add-hook 'window-configuration-change-hook
-        ;;           #'terminal-colors-term--set-foreground-background)
-        (terminal-colors--init))
+      (condition-case err
+          (progn
+            (require 'term)
+            (add-hook 'terminal-colors--after-load-hook
+                      #'terminal-colors-term--apply)
+            (add-hook 'terminal-colors--reset-hook
+                      #'terminal-colors-term--reset)
+            (add-hook 'term-mode-hook
+                      #'terminal-colors-term--set-foreground-background)
+            ;; (add-hook 'window-configuration-change-hook
+            ;;           #'terminal-colors-term--set-foreground-background)
+            (terminal-colors--init))
+        (error
+         (terminal-colors-term-mode -1)
+         (signal (car err) (cdr err))))
     ;; Remove
     (remove-hook 'terminal-colors--after-load-hook
                  #'terminal-colors-term--apply)
@@ -1016,12 +1098,16 @@ DEFAULT-FG-BG is the name of an item in
                  #'terminal-colors-term--set-foreground-background)
     ;; (remove-hook 'window-configuration-change-hook
     ;;              #'terminal-colors-term--set-foreground-background)
-    (terminal-colors-term--reset)))
+    (terminal-colors-term--reset)
+    (terminal-colors--maybe-uninit)))
 
 ;;; vterm
 
-(defvar terminal-colors-vterm--backup-color-palette nil
+(defvar terminal-colors-vterm--backup-color-palette 'unset
   "A backup of the vterm color palette.")
+
+(defvar terminal-colors-vterm--saved-faces nil
+  "Face state saved before applying terminal colors.")
 
 (defun terminal-colors-vterm--set-foreground-background ()
   "Set the `vterm' foreground and background color."
@@ -1032,6 +1118,16 @@ DEFAULT-FG-BG is the name of an item in
 (defun terminal-colors-vterm--set-face-attribute ()
   "Set the face attributes of `vterm'."
   (when (featurep 'vterm)
+    (unless terminal-colors-vterm--saved-faces
+      (setq terminal-colors-vterm--saved-faces
+            (terminal-colors--save-faces
+             '(vterm-color-black vterm-color-red vterm-color-green
+               vterm-color-yellow vterm-color-blue vterm-color-magenta
+               vterm-color-cyan vterm-color-white vterm-color-bright-black
+               vterm-color-bright-red vterm-color-bright-green
+               vterm-color-bright-yellow vterm-color-bright-blue
+               vterm-color-bright-magenta vterm-color-bright-cyan
+               vterm-color-bright-white))))
     (set-face-attribute 'vterm-color-black nil
                         :foreground terminal-colors--color-black
                         :background terminal-colors--color-black)
@@ -1111,6 +1207,7 @@ ARGS are additional property keywords like :foreground or :inverse-video."
      ((and (bound-and-true-p terminal-colors-vterm-mode)
            is-foreground
            (not is-inverse)
+           (not (memq :underline args))
            (= index -1)
            (bound-and-true-p terminal-colors--foreground))
       terminal-colors--foreground)
@@ -1164,17 +1261,19 @@ ARGS are additional property keywords like :foreground or :inverse-video."
 
 (defun terminal-colors-vterm--reset ()
   "Reset the Terminal Theme."
+  (terminal-colors--restore-faces terminal-colors-vterm--saved-faces)
+  (setq terminal-colors-vterm--saved-faces nil)
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (when (and (derived-mode-p 'vterm-mode)
                  terminal-colors--remap-cookies)
         (mapc #'face-remap-remove-relative terminal-colors--remap-cookies)
         (setq terminal-colors--remap-cookies nil))))
-  (when terminal-colors-vterm--backup-color-palette
-    (setq vterm-color-palette terminal-colors-vterm--backup-color-palette)
-    (setq terminal-colors-vterm--backup-color-palette nil))
-  (dolist (window (window-list))
-    (with-current-buffer (window-buffer window)
+  (unless (eq terminal-colors-vterm--backup-color-palette 'unset)
+    (set-default 'vterm-color-palette terminal-colors-vterm--backup-color-palette)
+    (setq terminal-colors-vterm--backup-color-palette 'unset))
+  (dolist (buffer (buffer-list))
+    (with-current-buffer buffer
       (when (and (derived-mode-p 'vterm-mode)
                  (bound-and-true-p vterm--term))
         (vterm--redraw vterm--term)))))
@@ -1185,9 +1284,9 @@ ARGS are additional property keywords like :foreground or :inverse-video."
     (with-current-buffer buf
       (terminal-colors-vterm--set-foreground-background)))
   (when (and (featurep 'vterm)
-             (not terminal-colors-vterm--backup-color-palette))
-    (setq terminal-colors-vterm--backup-color-palette vterm-color-palette)
-    (setq vterm-color-palette [terminal-colors-term-color-black
+             (eq terminal-colors-vterm--backup-color-palette 'unset))
+    (setq terminal-colors-vterm--backup-color-palette (default-value 'vterm-color-palette))
+    (set-default 'vterm-color-palette [terminal-colors-term-color-black
                                terminal-colors-term-color-red
                                terminal-colors-term-color-green
                                terminal-colors-term-color-yellow
@@ -1205,8 +1304,8 @@ ARGS are additional property keywords like :foreground or :inverse-video."
                                terminal-colors-term-color-bright-white]))
   (terminal-colors-vterm--set-face-attribute)
   ;; Force active vterm buffers to redraw to display the new theme immediately
-  (dolist (window (window-list))
-    (with-current-buffer (window-buffer window)
+  (dolist (buffer (buffer-list))
+    (with-current-buffer buffer
       (when (and (derived-mode-p 'vterm-mode)
                  (bound-and-true-p vterm--term))
         (vterm--redraw vterm--term)))))
@@ -1218,18 +1317,22 @@ ARGS are additional property keywords like :foreground or :inverse-video."
   :lighter " TVTerm"
   :group 'terminal-colors-vterm
   (if terminal-colors-vterm-mode
-      (progn
-        (require 'vterm)
-        (advice-add 'vterm--get-color :around #'terminal-colors-vterm--get-color-override)
-        (add-hook 'terminal-colors--after-load-hook
-                  #'terminal-colors-vterm--apply)
-        (add-hook 'terminal-colors--reset-hook
-                  #'terminal-colors-vterm--reset)
-        (add-hook 'vterm-mode-hook
-                  #'terminal-colors-vterm--set-foreground-background)
-        ;; (add-hook 'window-configuration-change-hook
-        ;;           #'terminal-colors-vterm--set-foreground-background)
-        (terminal-colors--init))
+      (condition-case err
+          (progn
+            (require 'vterm)
+            (advice-add 'vterm--get-color :around #'terminal-colors-vterm--get-color-override)
+            (add-hook 'terminal-colors--after-load-hook
+                      #'terminal-colors-vterm--apply)
+            (add-hook 'terminal-colors--reset-hook
+                      #'terminal-colors-vterm--reset)
+            (add-hook 'vterm-mode-hook
+                      #'terminal-colors-vterm--set-foreground-background)
+            ;; (add-hook 'window-configuration-change-hook
+            ;;           #'terminal-colors-vterm--set-foreground-background)
+            (terminal-colors--init))
+        (error
+         (terminal-colors-vterm-mode -1)
+         (signal (car err) (cdr err))))
     ;; Disable
     (advice-remove 'vterm--get-color #'terminal-colors-vterm--get-color-override)
     (remove-hook 'terminal-colors--after-load-hook
@@ -1241,7 +1344,8 @@ ARGS are additional property keywords like :foreground or :inverse-video."
     ;; (remove-hook 'window-configuration-change-hook
     ;;              #'terminal-colors-vterm--set-foreground-background)
 
-    (terminal-colors-vterm--reset)))
+    (terminal-colors-vterm--reset)
+    (terminal-colors--maybe-uninit)))
 
 (provide 'terminal-colors)
 
