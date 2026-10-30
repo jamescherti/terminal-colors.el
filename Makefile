@@ -41,7 +41,9 @@ cask: $(CASK_DIR)
 .PHONY: compile
 compile: cask
 	cask exec emacs -Q --batch -L . \
-		--eval "(setq byte-compile-error-on-warn t vterm-always-compile-module t)" \
+		--eval "(setq byte-compile-error-on-warn t
+					 vterm-always-compile-module t
+					 vterm-module-cmake-args \"-DUSE_SYSTEM_LIBVTERM=Off\")" \
 		-f batch-byte-compile $$(cask files); \
 		(ret=$$? ; cask clean-elc && exit $$ret)
 
