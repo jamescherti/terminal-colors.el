@@ -5,7 +5,4 @@
 (package-file "terminal-colors.el")
 (files "terminal-colors*.el")
 
-(development
- (depends-on "package-lint")
- (depends-on "eat")
- (depends-on "vterm"))
+(development (depends-on "package-lint"))
