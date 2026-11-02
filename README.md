@@ -48,6 +48,7 @@ To install *terminal-colors* with `use-package` and `:vc` (Emacs >= 30):
   ;;   terminator-solarized
   ;;   terminator-gruvbox-dark
   ;;   terminator-gruvbox-light
+  ;;   dracula
   (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
 
   (with-eval-after-load 'vterm
@@ -84,6 +85,7 @@ Step 2: Add the following code to the Emacs init file:
   ;;   terminator-solarized
   ;;   terminator-gruvbox-dark
   ;;   terminator-gruvbox-light
+  ;;   dracula
   (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
 
   (with-eval-after-load 'vterm
@@ -122,6 +124,7 @@ Step 2: Add to `~/.doom.d/config.el`:
   ;;   terminator-solarized
   ;;   terminator-gruvbox-dark
   ;;   terminator-gruvbox-light
+  ;;   dracula
   (setq terminal-colors-default-theme "gnome-terminal-tango-dark")
 
   (with-eval-after-load 'vterm
@@ -187,6 +190,7 @@ The following terminal themes are included out of the box:
 - `terminator-solarized`
 - `terminator-gruvbox-dark`
 - `terminator-gruvbox-light`
+- `dracula`
 
 ## Features
 
