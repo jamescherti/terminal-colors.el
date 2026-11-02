@@ -146,7 +146,7 @@
                                    ("cursor" . "#3c3836")))
     ("terminator-gruvbox-dark" . (("foreground" . "#ebdbb2")
                                   ("background" . "#282828")
-                                  ("cursor" . "#ebdbb2"))
+                                  ("cursor" . "#ebdbb2")))
     ("dracula" . (("foreground" . "#f8f8f2")
                   ("background" . "#282a36")
                   ("cursor" . "#f8f8f2"))))
