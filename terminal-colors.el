@@ -57,6 +57,7 @@
 (require 'ansi-color)
 (require 'cl-lib)
 (require 'face-remap)
+(require 'seq)
 
 (defvar ansi-term-color-vector)
 (defvar vterm-color-palette)
@@ -80,6 +81,10 @@
 
 (defgroup terminal-colors-vterm nil
   "Terminal color schemes for `vterm'."
+  :group 'terminal-colors)
+
+(defgroup terminal-colors-modus nil
+  "Terminal color schemes for Modus themes."
   :group 'terminal-colors)
 
 (defcustom terminal-colors-default-theme "gnome-terminal-tango-dark"
@@ -643,7 +648,8 @@ DEFAULT-FG-BG is the name of an item in
   "Remove theme advice when all terminal integrations are disabled."
   (unless (or (bound-and-true-p terminal-colors-eat-mode)
               (bound-and-true-p terminal-colors-term-mode)
-              (bound-and-true-p terminal-colors-vterm-mode))
+              (bound-and-true-p terminal-colors-vterm-mode)
+              (bound-and-true-p terminal-colors-modus-mode))
     (remove-hook 'window-buffer-change-functions
                  #'terminal-colors-frame-color--auto-change)
     (remove-hook 'window-selection-change-functions
@@ -1222,6 +1228,150 @@ Preserve indexed colors and explicit underline and `inverse-video' colors."
     (remove-hook 'vterm-mode-hook
                  #'terminal-colors-vterm--set-foreground-background)
     (terminal-colors-vterm--reset)
+    (terminal-colors--maybe-uninit)))
+
+
+;;; modus
+
+(defcustom terminal-colors-modus-theme nil
+  "Modus theme to override with the terminal colors.
+When nil use the currently loaded Modus theme."
+  :type '(choice (const :tag "Currently loaded Modus theme" nil)
+                 (symbol :tag "Theme name"))
+  :group 'terminal-colors-modus)
+
+(defconst terminal-colors-modus--map
+  '((fg-term-black           terminal-colors--color-black)
+    (fg-term-red             terminal-colors--color-red)
+    (fg-term-green           terminal-colors--color-green)
+    (fg-term-yellow          terminal-colors--color-yellow)
+    (fg-term-blue            terminal-colors--color-blue)
+    (fg-term-magenta         terminal-colors--color-magenta)
+    (fg-term-cyan            terminal-colors--color-cyan)
+    (fg-term-white           terminal-colors--color-white)
+    (fg-term-black-bright    terminal-colors--color-bright-black)
+    (fg-term-red-bright      terminal-colors--color-bright-red)
+    (fg-term-green-bright    terminal-colors--color-bright-green)
+    (fg-term-yellow-bright   terminal-colors--color-bright-yellow)
+    (fg-term-blue-bright     terminal-colors--color-bright-blue)
+    (fg-term-magenta-bright  terminal-colors--color-bright-magenta)
+    (fg-term-cyan-bright     terminal-colors--color-bright-cyan)
+    (fg-term-white-bright    terminal-colors--color-bright-white)
+    (bg-term-black           terminal-colors--color-black)
+    (bg-term-red             terminal-colors--color-red)
+    (bg-term-green           terminal-colors--color-green)
+    (bg-term-yellow          terminal-colors--color-yellow)
+    (bg-term-blue            terminal-colors--color-blue)
+    (bg-term-magenta         terminal-colors--color-magenta)
+    (bg-term-cyan            terminal-colors--color-cyan)
+    (bg-term-white           terminal-colors--color-white)
+    (bg-term-black-bright    terminal-colors--color-bright-black)
+    (bg-term-red-bright      terminal-colors--color-bright-red)
+    (bg-term-green-bright    terminal-colors--color-bright-green)
+    (bg-term-yellow-bright   terminal-colors--color-bright-yellow)
+    (bg-term-blue-bright     terminal-colors--color-bright-blue)
+    (bg-term-magenta-bright  terminal-colors--color-bright-magenta)
+    (bg-term-cyan-bright     terminal-colors--color-bright-cyan)
+    (bg-term-white-bright    terminal-colors--color-bright-white))
+  "Alist mapping Modus terminal palette entries to color variables.")
+
+;; (VAR . ENTRIES) where ENTRIES is an alist of (KEY . ENTRY-COPY) holding the
+;; original overrides in VAR.
+(defvar terminal-colors-modus--saved nil
+  "Original Modus palette overrides saved before applying terminal colors.")
+
+(defvar terminal-colors-modus--reloading nil
+  "Non-nil while the Modus theme is being reloaded by this package.")
+
+(defun terminal-colors-modus--property (theme property)
+  "Return PROPERTY from the `theme-properties' of THEME."
+  (plist-get (get theme 'theme-properties) property))
+
+(defun terminal-colors-modus--theme ()
+  "Return the Modus theme to configure, or nil if none is available."
+  (or terminal-colors-modus-theme
+      (seq-find (lambda (theme)
+                  (terminal-colors-modus--property theme :modus-core-palette))
+                custom-enabled-themes)))
+
+(defun terminal-colors-modus--palette-var (theme)
+  "Return the palette overrides variable of THEME if it is bound."
+  (let ((var (and theme
+                  (terminal-colors-modus--property
+                   theme :modus-overrides-palette))))
+    (and var (boundp var) var)))
+
+(defun terminal-colors-modus--reload (theme)
+  "Reload THEME, keeping the overrides that are currently applied."
+  (when (and theme (memq theme custom-enabled-themes))
+    (let ((terminal-colors-modus--reloading t))
+      (load-theme theme t))))
+
+(defun terminal-colors-modus--synch (modus-color var-color palette-var)
+  "Set MODUS-COLOR in PALETTE-VAR to the value of VAR-COLOR."
+  (setf (alist-get modus-color (symbol-value palette-var))
+        (list (symbol-value var-color))))
+
+(defun terminal-colors-modus--apply ()
+  "Save the current Modus overrides, apply the terminal colors, reload."
+  (let* ((theme (terminal-colors-modus--theme))
+         (palette-var (terminal-colors-modus--palette-var theme)))
+    (cond
+     ((null palette-var)
+      (message "[terminal-colors] No Modus palette found for theme %S" theme))
+     (t
+      (when (and terminal-colors-modus--saved
+                 (not (eq (car terminal-colors-modus--saved) palette-var)))
+        (terminal-colors-modus--reset))
+      (unless terminal-colors-modus--saved
+        (setq terminal-colors-modus--saved
+              (cons palette-var
+                    (mapcar (lambda (entry)
+                              (cons (car entry)
+                                    (copy-sequence
+                                     (assq (car entry) (symbol-value palette-var)))))
+                            terminal-colors-modus--map))))
+      (let ((before (copy-tree (symbol-value palette-var))))
+        (dolist (entry terminal-colors-modus--map)
+          (terminal-colors-modus--synch (car entry) (cadr entry) palette-var))
+        (unless (equal before (symbol-value palette-var))
+          (terminal-colors-modus--reload theme)))))))
+
+(defun terminal-colors-modus--reset ()
+  "Restore the Modus overrides saved by `terminal-colors-modus--apply'."
+  (when (and terminal-colors-modus--saved
+             (not terminal-colors-modus--reloading))
+    (let ((palette-var (car terminal-colors-modus--saved)))
+      (dolist (saved (cdr terminal-colors-modus--saved))
+        (if (cdr saved)
+            (setf (alist-get (car saved) (symbol-value palette-var))
+                  (cddr saved))
+          (setf (alist-get (car saved) (symbol-value palette-var) nil t)
+                nil))))
+    (setq terminal-colors-modus--saved nil)))
+
+;;;###autoload
+(define-minor-mode terminal-colors-modus-mode
+  "Toggle `terminal-colors-modus-mode'."
+  :global t
+  :lighter " TModus"
+  :group 'terminal-colors-modus
+  (if terminal-colors-modus-mode
+      (progn
+        (add-hook 'terminal-colors--after-load-hook
+                  #'terminal-colors-modus--apply)
+        (add-hook 'terminal-colors--reset-hook
+                  #'terminal-colors-modus--reset)
+        (terminal-colors--init))
+    (remove-hook 'terminal-colors--after-load-hook
+                 #'terminal-colors-modus--apply)
+    (remove-hook 'terminal-colors--reset-hook
+                 #'terminal-colors-modus--reset)
+    (let ((theme (terminal-colors-modus--theme))
+          (had-saved terminal-colors-modus--saved))
+      (terminal-colors-modus--reset)
+      (when had-saved
+        (terminal-colors-modus--reload theme)))
     (terminal-colors--maybe-uninit)))
 
 (provide 'terminal-colors)
